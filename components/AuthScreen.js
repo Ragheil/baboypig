@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 
-const AuthScreen = ({ email, setEmail, password, setPassword, isLogin, setIsLogin, handleAuthentication }) => {
+export default function AuthScreen({ email, setEmail, password, setPassword, isLogin, setIsLogin, handleAuthentication }) {
   return (
     <View style={styles.authContainer}>
       <Text style={styles.title}>{isLogin ? 'Sign In' : 'Sign Up'}</Text>
+
       <TextInput
         style={styles.input}
         value={email}
@@ -22,6 +23,7 @@ const AuthScreen = ({ email, setEmail, password, setPassword, isLogin, setIsLogi
       <View style={styles.buttonContainer}>
         <Button title={isLogin ? 'Sign In' : 'Sign Up'} onPress={handleAuthentication} color="#3498db" />
       </View>
+
       <View style={styles.bottomContainer}>
         <Text style={styles.toggleText} onPress={() => setIsLogin(!isLogin)}>
           {isLogin ? 'Need an account? Sign Up' : 'Already have an account? Sign In'}
@@ -29,7 +31,7 @@ const AuthScreen = ({ email, setEmail, password, setPassword, isLogin, setIsLogi
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   authContainer: {
@@ -64,5 +66,3 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
-
-export default AuthScreen;

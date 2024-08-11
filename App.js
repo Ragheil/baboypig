@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@firebase/auth';
 import { initializeApp } from '@firebase/app';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import WelcomeScreen from './components/WelcomeScreen';
 import AuthScreen from './components/AuthScreen';
@@ -22,8 +23,22 @@ export default function App() {
   const auth = getAuth(app);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUser(user);
+        try {
+          const storedFarmName = await AsyncStorage.getItem('farmName');
+          console.log('Retrieved farm name:', storedFarmName); // Debugging log
+          if (storedFarmName) {
+            setFarmName(storedFarmName);
+          }
+        } catch (error) {
+          console.error('Failed to retrieve the farm name:', error);
+        }
+      } else {
+        setUser(null);
+        setFarmName('');
+      }
     });
 
     return () => unsubscribe();
@@ -34,7 +49,8 @@ export default function App() {
       if (user) {
         console.log('User logged out successfully!');
         await signOut(auth);
-        setFarmName(''); // Clear farm name after logout
+        await AsyncStorage.removeItem('farmName'); // Remove farm name on logout
+        setFarmName('');
       } else {
         if (isLogin) {
           await signInWithEmailAndPassword(auth, email, password);
@@ -49,12 +65,19 @@ export default function App() {
     }
   };
 
-  const handleFarmNameSubmit = (name) => {
+  const handleFarmNameSubmit = async (name) => {
     setFarmName(name);
+    try {
+      await AsyncStorage.setItem('farmName', name); // Store the farm name
+      console.log('Farm name saved:', name); // Debugging log
+    } catch (error) {
+      console.error('Failed to save the farm name:', error);
+    }
   };
 
   const handleLogout = async () => {
     await signOut(auth);
+    await AsyncStorage.removeItem('farmName'); // Clear farm name on logout
     setUser(null);
     setFarmName('');
     setIsLogin(true);

@@ -1,34 +1,30 @@
 import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 
-const DashboardScreen = ({ farmName, onLogout }) => {
+export default function DashboardScreen({ farmName, onLogout }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to {farmName}!</Text>
-      <View style={styles.settingsContainer}>
-        <Button title="Settings" onPress={onLogout} color="#e74c3c" />
-      </View>
+      <Text style={styles.title}>Welcome to Your Dashboard</Text>
+      <Text style={styles.farmNameText}>Farm: {farmName}</Text>
+      <Button title="Logout" onPress={onLogout} color="#e74c3c" />
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
-    backgroundColor: '#fff',
     padding: 16,
+    backgroundColor: '#f0f0f0',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 24,
+    marginBottom: 16,
   },
-  settingsContainer: {
-    marginTop: 20,
-    width: '80%',
+  farmNameText: {
+    fontSize: 18,
+    marginBottom: 20,
   },
 });
-
-export default DashboardScreen;
