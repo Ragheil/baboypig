@@ -3,8 +3,10 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@firebase/auth';
 import { initializeApp } from '@firebase/app';
 
+import WelcomeScreen from './components/WelcomeScreen';
 import AuthScreen from './components/AuthScreen';
-import AuthenticatedScreen from './components/AuthenticatedScreen';
+import FarmNameScreen from './components/FarmNameScreen';
+import DashboardScreen from './components/DashboardScreen';
 import firebaseConfig from './firebase/config';
 
 const app = initializeApp(firebaseConfig);
@@ -14,6 +16,8 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
   const [isLogin, setIsLogin] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [farmName, setFarmName] = useState('');
 
   const auth = getAuth(app);
 
@@ -44,10 +48,18 @@ export default function App() {
     }
   };
 
+  const handleFarmNameSubmit = (name) => {
+    setFarmName(name);
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {user ? (
-        <AuthenticatedScreen user={user} handleAuthentication={handleAuthentication} />
+      {showWelcome ? (
+        <WelcomeScreen onStart={() => setShowWelcome(false)} />
+      ) : user && !farmName ? (
+        <FarmNameScreen onSubmit={handleFarmNameSubmit} />
+      ) : user && farmName ? (
+        <DashboardScreen farmName={farmName} />
       ) : (
         <AuthScreen
           email={email}
