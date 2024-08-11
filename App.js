@@ -6,7 +6,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import WelcomeScreen from './components/WelcomeScreen';
 import AuthScreen from './components/AuthScreen';
-import FarmNameScreen from './components/FarmNameScreen';
 import DashboardScreen from './components/DashboardScreen';
 import firebaseConfig from './firebase/config';
 
@@ -15,10 +14,10 @@ const app = initializeApp(firebaseConfig);
 export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [farmName, setFarmName] = useState('');
   const [user, setUser] = useState(null);
   const [isLogin, setIsLogin] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [farmName, setFarmName] = useState('');
 
   const auth = getAuth(app);
 
@@ -26,16 +25,17 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        try {
-          const storedFarmName = await AsyncStorage.getItem('farmName');
-          console.log('Retrieved farm name:', storedFarmName); // Debugging log
-          if (storedFarmName) {
-            setFarmName(storedFarmName);
-          }
-        } catch (error) {
-          console.error('Failed to retrieve the farm name:', error);
+        console.log(`User logged in: ${user.email}`);
+        // Retrieve the farm name using user UID
+        const storedFarmName = await AsyncStorage.getItem(`farmName_${user.uid}`);
+        if (storedFarmName) {
+          setFarmName(storedFarmName);
+          console.log(`Farm name retrieved: ${storedFarmName}`);
+        } else {
+          console.log('No farm name found for this user.');
         }
       } else {
+        console.log('User logged out.');
         setUser(null);
         setFarmName('');
       }
@@ -47,17 +47,26 @@ export default function App() {
   const handleAuthentication = async () => {
     try {
       if (user) {
-        console.log('User logged out successfully!');
+        // If user is already authenticated, log out
         await signOut(auth);
-        await AsyncStorage.removeItem('farmName'); // Remove farm name on logout
-        setFarmName('');
+        console.log('User logged out successfully.');
+        setFarmName(''); // Clear farm name state on logout
       } else {
+        // Sign in or sign up
         if (isLogin) {
+          // Sign in
           await signInWithEmailAndPassword(auth, email, password);
-          console.log('User signed in successfully!');
+          console.log(`User signed in successfully: ${email}`);
+          // Optionally retrieve and log the farm name after sign-in
+          const storedFarmName = await AsyncStorage.getItem(`farmName_${auth.currentUser.uid}`);
+          console.log(`Farm name for signed-in user: ${storedFarmName}`);
         } else {
+          // Sign up
           await createUserWithEmailAndPassword(auth, email, password);
-          console.log('User created successfully!');
+          console.log(`User created successfully: ${email}`);
+          // Store the farm name after sign-up with user UID
+          await AsyncStorage.setItem(`farmName_${auth.currentUser.uid}`, farmName);
+          console.log(`Farm name saved for user ${auth.currentUser.uid}: ${farmName}`);
         }
       }
     } catch (error) {
@@ -65,21 +74,11 @@ export default function App() {
     }
   };
 
-  const handleFarmNameSubmit = async (name) => {
-    setFarmName(name);
-    try {
-      await AsyncStorage.setItem('farmName', name); // Store the farm name
-      console.log('Farm name saved:', name); // Debugging log
-    } catch (error) {
-      console.error('Failed to save the farm name:', error);
-    }
-  };
-
   const handleLogout = async () => {
     await signOut(auth);
-    await AsyncStorage.removeItem('farmName'); // Clear farm name on logout
+    console.log('User logged out successfully.');
     setUser(null);
-    setFarmName('');
+    setFarmName(''); // Clear farm name state
     setIsLogin(true);
     setShowWelcome(true); // Navigate back to welcome screen after logout
   };
@@ -88,9 +87,7 @@ export default function App() {
     <ScrollView contentContainerStyle={styles.container}>
       {showWelcome ? (
         <WelcomeScreen onStart={() => setShowWelcome(false)} />
-      ) : user && !farmName ? (
-        <FarmNameScreen onSubmit={handleFarmNameSubmit} />
-      ) : user && farmName ? (
+      ) : user ? (
         <DashboardScreen farmName={farmName} onLogout={handleLogout} />
       ) : (
         <AuthScreen
@@ -98,6 +95,8 @@ export default function App() {
           setEmail={setEmail}
           password={password}
           setPassword={setPassword}
+          farmName={farmName}
+          setFarmName={setFarmName}
           isLogin={isLogin}
           setIsLogin={setIsLogin}
           handleAuthentication={handleAuthentication}

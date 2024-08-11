@@ -1,11 +1,22 @@
 import React from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 
-export default function AuthScreen({ email, setEmail, password, setPassword, isLogin, setIsLogin, handleAuthentication }) {
+const AuthScreen = ({ email, setEmail, password, setPassword, farmName, setFarmName, isLogin, setIsLogin, handleAuthentication }) => {
   return (
     <View style={styles.authContainer}>
       <Text style={styles.title}>{isLogin ? 'Sign In' : 'Sign Up'}</Text>
 
+      {/* Farm Name Input - Shown only on Sign Up */}
+      {!isLogin && (
+        <TextInput
+          style={styles.input}
+          value={farmName}
+          onChangeText={setFarmName}
+          placeholder="Farm Name"
+        />
+      )}
+
+      {/* Email Input */}
       <TextInput
         style={styles.input}
         value={email}
@@ -13,6 +24,8 @@ export default function AuthScreen({ email, setEmail, password, setPassword, isL
         placeholder="Email"
         autoCapitalize="none"
       />
+
+      {/* Password Input */}
       <TextInput
         style={styles.input}
         value={password}
@@ -20,10 +33,13 @@ export default function AuthScreen({ email, setEmail, password, setPassword, isL
         placeholder="Password"
         secureTextEntry
       />
+
+      {/* Button for Sign Up / Sign In */}
       <View style={styles.buttonContainer}>
         <Button title={isLogin ? 'Sign In' : 'Sign Up'} onPress={handleAuthentication} color="#3498db" />
       </View>
 
+      {/* Toggle between Sign Up and Sign In */}
       <View style={styles.bottomContainer}>
         <Text style={styles.toggleText} onPress={() => setIsLogin(!isLogin)}>
           {isLogin ? 'Need an account? Sign Up' : 'Already have an account? Sign In'}
@@ -31,7 +47,7 @@ export default function AuthScreen({ email, setEmail, password, setPassword, isL
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   authContainer: {
@@ -66,3 +82,5 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
+
+export default AuthScreen;
