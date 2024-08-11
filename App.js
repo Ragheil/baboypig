@@ -34,6 +34,7 @@ export default function App() {
       if (user) {
         console.log('User logged out successfully!');
         await signOut(auth);
+        setFarmName(''); // Clear farm name after logout
       } else {
         if (isLogin) {
           await signInWithEmailAndPassword(auth, email, password);
@@ -52,6 +53,14 @@ export default function App() {
     setFarmName(name);
   };
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+    setFarmName('');
+    setIsLogin(true);
+    setShowWelcome(true); // Navigate back to welcome screen after logout
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {showWelcome ? (
@@ -59,7 +68,7 @@ export default function App() {
       ) : user && !farmName ? (
         <FarmNameScreen onSubmit={handleFarmNameSubmit} />
       ) : user && farmName ? (
-        <DashboardScreen farmName={farmName} />
+        <DashboardScreen farmName={farmName} onLogout={handleLogout} />
       ) : (
         <AuthScreen
           email={email}
