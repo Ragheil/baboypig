@@ -5,7 +5,8 @@ import { initializeApp } from '@firebase/app';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import WelcomeScreen from './components/WelcomeScreen';
-import AuthScreen from './components/AuthScreen';
+import LoginScreen from './components/authentication/LoginScreen';
+import RegisterScreen from './components/authentication/RegisterScreen';
 import DashboardScreen from './components/DashboardScreen';
 import firebaseConfig from './firebase/config';
 
@@ -26,7 +27,6 @@ export default function App() {
       if (user) {
         setUser(user);
         console.log(`User logged in: ${user.email}`);
-        // Retrieve the farm name using user UID
         const storedFarmName = await AsyncStorage.getItem(`farmName_${user.uid}`);
         if (storedFarmName) {
           setFarmName(storedFarmName);
@@ -46,28 +46,18 @@ export default function App() {
 
   const handleAuthentication = async () => {
     try {
-      if (user) {
-        // If user is already authenticated, log out
-        await signOut(auth);
-        console.log('User logged out successfully.');
-        setFarmName(''); // Clear farm name state on logout
+      if (isLogin) {
+        // Sign in
+        await signInWithEmailAndPassword(auth, email, password);
+        console.log(`User signed in successfully: ${email}`);
+        const storedFarmName = await AsyncStorage.getItem(`farmName_${auth.currentUser.uid}`);
+        console.log(`Farm name for signed-in user: ${storedFarmName}`);
       } else {
-        // Sign in or sign up
-        if (isLogin) {
-          // Sign in
-          await signInWithEmailAndPassword(auth, email, password);
-          console.log(`User signed in successfully: ${email}`);
-          // Optionally retrieve and log the farm name after sign-in
-          const storedFarmName = await AsyncStorage.getItem(`farmName_${auth.currentUser.uid}`);
-          console.log(`Farm name for signed-in user: ${storedFarmName}`);
-        } else {
-          // Sign up
-          await createUserWithEmailAndPassword(auth, email, password);
-          console.log(`User created successfully: ${email}`);
-          // Store the farm name after sign-up with user UID
-          await AsyncStorage.setItem(`farmName_${auth.currentUser.uid}`, farmName);
-          console.log(`Farm name saved for user ${auth.currentUser.uid}: ${farmName}`);
-        }
+        // Sign up
+        await createUserWithEmailAndPassword(auth, email, password);
+        console.log(`User created successfully: ${email}`);
+        await AsyncStorage.setItem(`farmName_${auth.currentUser.uid}`, farmName);
+        console.log(`Farm name saved for user ${auth.currentUser.uid}: ${farmName}`);
       }
     } catch (error) {
       console.error('Authentication error:', error.message);
@@ -78,9 +68,17 @@ export default function App() {
     await signOut(auth);
     console.log('User logged out successfully.');
     setUser(null);
-    setFarmName(''); // Clear farm name state
+    setFarmName('');
     setIsLogin(true);
-    setShowWelcome(true); // Navigate back to welcome screen after logout
+    setShowWelcome(true);
+  };
+
+  const navigateToRegister = () => {
+    setIsLogin(false);
+  };
+
+  const navigateToLogin = () => {
+    setIsLogin(true);
   };
 
   return (
@@ -89,17 +87,25 @@ export default function App() {
         <WelcomeScreen onStart={() => setShowWelcome(false)} />
       ) : user ? (
         <DashboardScreen farmName={farmName} onLogout={handleLogout} />
+      ) : isLogin ? (
+        <LoginScreen
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          handleAuthentication={handleAuthentication}
+          navigateToRegister={navigateToRegister}
+        />
       ) : (
-        <AuthScreen
+        <RegisterScreen
           email={email}
           setEmail={setEmail}
           password={password}
           setPassword={setPassword}
           farmName={farmName}
           setFarmName={setFarmName}
-          isLogin={isLogin}
-          setIsLogin={setIsLogin}
           handleAuthentication={handleAuthentication}
+          navigateToLogin={navigateToLogin}
         />
       )}
     </ScrollView>
