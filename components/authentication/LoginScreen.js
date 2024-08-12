@@ -1,28 +1,49 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const LoginScreen = ({ email, setEmail, password, setPassword, handleAuthentication, navigateToRegister }) => {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+
+  const handleLogin = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+    } else {
+      handleAuthentication();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>PigEx</Text>
 
       <Text style={styles.header}>Login</Text>
 
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email Address"
-        autoCapitalize="none"
-      />
+      <View style={styles.emailContainer}>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email Address"
+          autoCapitalize="none"
+        />
+      </View>
 
-      <TextInput
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Password"
-        secureTextEntry
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          secureTextEntry={!passwordVisible}
+        />
+        <TouchableOpacity
+          onPress={() => setPasswordVisible(!passwordVisible)}
+          style={styles.toggleIcon}
+        >
+          <Ionicons name={passwordVisible ? "eye-off" : "eye"} size={24} color="#333" />
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.orText}>or login with</Text>
 
@@ -30,7 +51,7 @@ const LoginScreen = ({ email, setEmail, password, setPassword, handleAuthenticat
         <Text style={styles.googleButtonText}>Google</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleAuthentication}>
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginButtonText}>Login</Text>
       </TouchableOpacity>
 
@@ -62,13 +83,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#333',
   },
+  emailContainer: {
+    marginBottom: 10,
+  },
   input: {
+    flex: 1,
     height: 50,
     borderColor: '#ddd',
     borderWidth: 1,
-    marginBottom: 10,
     paddingHorizontal: 15,
     borderRadius: 8,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  toggleIcon: {
+    marginLeft: 10,
   },
   orText: {
     textAlign: 'center',
@@ -95,13 +127,11 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    
   },
   toggleText: {
     textAlign: 'center',
     color: '#000',
     fontWeight: 'bold',
-    
   },
 });
 
