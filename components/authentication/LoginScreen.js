@@ -18,16 +18,15 @@ const LoginScreen = ({ email, setEmail, password, setPassword, handleAuthenticat
       <Text style={styles.title}>PigEx</Text>
 
       <Text style={styles.header}>Login</Text>
-
       <View style={styles.emailContainer}>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email Address"
-          autoCapitalize="none"
-        />
-      </View>
+      <TextInput
+        style={styles.input}
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Email Address"
+        autoCapitalize="none"
+      />
+  </View>
 
       <View style={styles.passwordContainer}>
         <TextInput
@@ -83,9 +82,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#333',
   },
-  emailContainer: {
-    marginBottom: 10,
-  },
   input: {
     flex: 1,
     height: 50,
@@ -93,14 +89,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 15,
     borderRadius: 8,
+    paddingRight: 45, // Space for the toggle icon
+    marginBottom: 10,
+    paddingHorizontal: 15,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    position: 'relative',
   },
   toggleIcon: {
-    marginLeft: 10,
+    position: 'absolute',
+    right: 10,
   },
   orText: {
     textAlign: 'center',

@@ -9,7 +9,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setF
 
   const handleRegister = () => {
     if (password !== retypePassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert('Error', 'Passwords does not match');
     } else {
       handleAuthentication();
     }
@@ -20,7 +20,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setF
       <Text style={styles.title}>PigEx</Text>
 
       <Text style={styles.header}>Create your account</Text>
-      <View style={styles.emailPassContainer}>
+      <View style={styles.farmNameContainer}>
 
       <TextInput
         style={styles.input}
@@ -36,7 +36,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setF
         placeholder="Email Address"
         autoCapitalize="none"
       />
-</View>
+      </View>
       <View style={styles.passwordContainer}>
         <TextInput
           style={styles.input}
@@ -115,14 +115,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 15,
     borderRadius: 8,
+    paddingRight: 45, // Space for the toggle icon
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    position: 'relative',
   },
   toggleIcon: {
-    marginLeft: 10,
+    position: 'absolute',
+    right: 10,
   },
   orText: {
     textAlign: 'center',
