@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@firebase/auth';
+import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import WelcomeScreen from './components/WelcomeScreen';
 import LoginScreen from './components/authentication/LoginScreen';
 import RegisterScreen from './components/authentication/RegisterScreen';
 import DashboardScreen from './components/DashboardScreen';
 
-import { auth } from './firebase/config2'; // Firebase initialization
+import { auth, firestore } from './firebase/config2';
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -23,8 +24,18 @@ export default function App() {
       if (user) {
         setUser(user);
         console.log(`User logged in: ${user.email}`);
-        const storedFarmName = await AsyncStorage.getItem(`farmName_${user.uid}`);
-        setFarmName(storedFarmName || 'No Farm Name');
+
+        // Retrieve farmName from Firestore
+        const docRef = doc(firestore, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const farmData = docSnap.data();
+          setFarmName(farmData.farmName || 'No Farm Name');
+        } else {
+          console.log('No such document in Firestore!');
+          setFarmName('No Farm Name');
+        }
       } else {
         console.log('User logged out.');
         setUser(null);
@@ -43,7 +54,11 @@ export default function App() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
         console.log(`User created successfully: ${email}`);
-        await AsyncStorage.setItem(`farmName_${auth.currentUser.uid}`, farmName);
+
+        // Save farmName to Firestore
+        const userDoc = doc(firestore, 'users', auth.currentUser.uid);
+        await setDoc(userDoc, { farmName });
+
         console.log(`Farm name saved for user ${auth.currentUser.uid}: ${farmName}`);
       }
     } catch (error) {
@@ -97,6 +112,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#3CB18A',
   },
 });
