@@ -1,8 +1,11 @@
+// RegisterScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setFarmName, firstName, setFirstName, lastName, setLastName, handleAuthentication, navigateToLogin }) => {
+const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setFarmName, handleAuthentication, navigateToLogin }) => {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [retypePassword, setRetypePassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [retypePasswordVisible, setRetypePasswordVisible] = useState(false);
@@ -11,7 +14,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setF
     if (password !== retypePassword) {
       Alert.alert('Error', 'Passwords do not match');
     } else {
-      handleAuthentication();
+      handleAuthentication(firstName, lastName); // Pass firstName and lastName
     }
   };
 
@@ -155,21 +158,20 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   googleButton: {
-    backgroundColor: '#4285F4',
-    paddingVertical: 10,
+    backgroundColor: '#eee',
+    paddingVertical: 15,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 20,
     alignItems: 'center',
   },
   googleButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: '#333',
   },
   registerButton: {
-    backgroundColor: '#3E5C44',
-    paddingVertical: 10,
+    backgroundColor: '#000',
+    paddingVertical: 15,
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 10,
     alignItems: 'center',
   },
   registerButtonText: {
@@ -178,7 +180,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     textAlign: 'center',
-    color: '#3E5C44',
+    color: '#000',
     fontWeight: 'bold',
   },
 });

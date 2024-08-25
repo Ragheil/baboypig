@@ -1,3 +1,4 @@
+// App.js
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@firebase/auth';
@@ -26,7 +27,7 @@ export default function App() {
         setUser(user);
         console.log(`User logged in: ${user.email}`);
 
-        // Retrieve user data from Firestore
+        // Retrieve farmName and other user data from Firestore
         const docRef = doc(firestore, 'users', user.uid);
         const docSnap = await getDoc(docRef);
 
@@ -53,7 +54,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  const handleAuthentication = async () => {
+  const handleAuthentication = async (firstName = '', lastName = '') => {
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
@@ -96,6 +97,7 @@ export default function App() {
           setEmail={setEmail}
           password={password}
           setPassword={setPassword}
+          handleAuthentication={handleAuthentication}
           navigateToRegister={() => setIsLogin(false)}
         />
       ) : (
@@ -106,10 +108,6 @@ export default function App() {
           setPassword={setPassword}
           farmName={farmName}
           setFarmName={setFarmName}
-          firstName={firstName}
-          setFirstName={setFirstName}
-          lastName={lastName}
-          setLastName={setLastName}
           handleAuthentication={handleAuthentication}
           navigateToLogin={() => setIsLogin(true)}
         />
