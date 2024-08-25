@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import WelcomeScreen from './components/WelcomeScreen';
@@ -15,6 +14,8 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [farmName, setFarmName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [user, setUser] = useState(null);
   const [isLogin, setIsLogin] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -25,21 +26,27 @@ export default function App() {
         setUser(user);
         console.log(`User logged in: ${user.email}`);
 
-        // Retrieve farmName from Firestore
+        // Retrieve user data from Firestore
         const docRef = doc(firestore, 'users', user.uid);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          const farmData = docSnap.data();
-          setFarmName(farmData.farmName || 'No Farm Name');
+          const userData = docSnap.data();
+          setFarmName(userData.farmName || 'No Farm Name');
+          setFirstName(userData.firstName || '');
+          setLastName(userData.lastName || '');
         } else {
           console.log('No such document in Firestore!');
           setFarmName('No Farm Name');
+          setFirstName('');
+          setLastName('');
         }
       } else {
         console.log('User logged out.');
         setUser(null);
         setFarmName('');
+        setFirstName('');
+        setLastName('');
       }
     });
 
@@ -55,11 +62,11 @@ export default function App() {
         await createUserWithEmailAndPassword(auth, email, password);
         console.log(`User created successfully: ${email}`);
 
-        // Save farmName to Firestore
+        // Save user data to Firestore
         const userDoc = doc(firestore, 'users', auth.currentUser.uid);
-        await setDoc(userDoc, { farmName });
+        await setDoc(userDoc, { farmName, firstName, lastName });
 
-        console.log(`Farm name saved for user ${auth.currentUser.uid}: ${farmName}`);
+        console.log(`User data saved for ${auth.currentUser.uid}: Farm Name: ${farmName}, First Name: ${firstName}, Last Name: ${lastName}`);
       }
     } catch (error) {
       console.error('Authentication error:', error.message);
@@ -71,6 +78,8 @@ export default function App() {
     console.log('User logged out successfully.');
     setUser(null);
     setFarmName('');
+    setFirstName('');
+    setLastName('');
     setIsLogin(true);
     setShowWelcome(true);
   };
@@ -80,14 +89,13 @@ export default function App() {
       {showWelcome ? (
         <WelcomeScreen onStart={() => setShowWelcome(false)} />
       ) : user ? (
-        <DashboardScreen farmName={farmName} onLogout={handleLogout} />
+        <DashboardScreen firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />
       ) : isLogin ? (
         <LoginScreen
           email={email}
           setEmail={setEmail}
           password={password}
           setPassword={setPassword}
-          handleAuthentication={handleAuthentication}
           navigateToRegister={() => setIsLogin(false)}
         />
       ) : (
@@ -98,6 +106,10 @@ export default function App() {
           setPassword={setPassword}
           farmName={farmName}
           setFarmName={setFarmName}
+          firstName={firstName}
+          setFirstName={setFirstName}
+          lastName={lastName}
+          setLastName={setLastName}
           handleAuthentication={handleAuthentication}
           navigateToLogin={() => setIsLogin(true)}
         />
@@ -110,8 +122,5 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#3CB18A',
   },
 });

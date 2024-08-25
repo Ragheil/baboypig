@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setFarmName, handleAuthentication, navigateToLogin }) => {
+const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setFarmName, firstName, setFirstName, lastName, setLastName, handleAuthentication, navigateToLogin }) => {
   const [retypePassword, setRetypePassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [retypePasswordVisible, setRetypePasswordVisible] = useState(false);
 
   const handleRegister = () => {
     if (password !== retypePassword) {
-      Alert.alert('Error', 'Passwords does not match');
+      Alert.alert('Error', 'Passwords do not match');
     } else {
       handleAuthentication();
     }
@@ -20,14 +20,29 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setF
       <Text style={styles.title}>PigEx</Text>
 
       <Text style={styles.header}>Create your account</Text>
-      <View style={styles.farmNameContainer}>
-
+      
       <TextInput
         style={styles.input}
         value={farmName}
         onChangeText={setFarmName}
         placeholder="Farm Name"
       />
+
+      <View style={styles.nameContainer}>
+        <TextInput
+          style={[styles.input, styles.nameInput]}
+          value={firstName}
+          onChangeText={setFirstName}
+          placeholder="First Name"
+        />
+
+        <TextInput
+          style={[styles.input, styles.nameInput]}
+          value={lastName}
+          onChangeText={setLastName}
+          placeholder="Last Name"
+        />
+      </View>
 
       <TextInput
         style={styles.input}
@@ -36,7 +51,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setF
         placeholder="Email Address"
         autoCapitalize="none"
       />
-      </View>
+
       <View style={styles.passwordContainer}>
         <TextInput
           style={styles.input}
@@ -117,6 +132,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingRight: 45, // Space for the toggle icon
   },
+  nameContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  nameInput: {
+    flex: 0.48, // Adjusts the width of the first and last name inputs
+  },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -133,20 +155,21 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   googleButton: {
-    backgroundColor: '#eee',
-    paddingVertical: 15,
+    backgroundColor: '#4285F4',
+    paddingVertical: 10,
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 10,
     alignItems: 'center',
   },
   googleButtonText: {
-    color: '#333',
+    color: '#fff',
+    fontWeight: 'bold',
   },
   registerButton: {
-    backgroundColor: '#000',
-    paddingVertical: 15,
+    backgroundColor: '#3E5C44',
+    paddingVertical: 10,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 20,
     alignItems: 'center',
   },
   registerButtonText: {
@@ -155,7 +178,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     textAlign: 'center',
-    color: '#000',
+    color: '#3E5C44',
     fontWeight: 'bold',
   },
 });
