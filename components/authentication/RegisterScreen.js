@@ -77,7 +77,11 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
           <Ionicons name={retypePasswordVisible ? "eye-off" : "eye"} size={24} color="#333" />
         </TouchableOpacity>
       </View>
-      
+      <Text style={styles.orText}>or login with</Text>
+
+<TouchableOpacity style={styles.googleButton}>
+  <Text style={styles.googleButtonText}>Google</Text>
+</TouchableOpacity>
       <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
         <Text style={styles.registerButtonText}>Register</Text>
       </TouchableOpacity>
@@ -129,6 +133,23 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 10,
   },
+
+  orText: {
+    textAlign: 'center',
+    marginVertical: 10,
+    color: '#666',
+  },
+  googleButton: {
+    backgroundColor: '#eee',
+    paddingVertical: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  googleButtonText: {
+    color: '#333',
+  },
+  
   registerButton: {
     backgroundColor: '#000',
     paddingVertical: 15,
