@@ -19,7 +19,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Register</Text>
+      <Text style={styles.header}>Create your Account</Text>
       
       <View style={styles.nameContainer}>
         <TextInput
@@ -77,7 +77,11 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
           <Ionicons name={retypePasswordVisible ? "eye-off" : "eye"} size={24} color="#333" />
         </TouchableOpacity>
       </View>
-      
+      <Text style={styles.orText}>or login with</Text>
+
+<TouchableOpacity style={styles.googleButton}>
+  <Text style={styles.googleButtonText}>Google</Text>
+</TouchableOpacity>
       <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
         <Text style={styles.registerButtonText}>Register</Text>
       </TouchableOpacity>
@@ -94,13 +98,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#869F77',
   },
   header: {
     fontSize: 24,
     textAlign: 'center',
     marginBottom: 20,
-    color: '#333',
+    color: '#000000',
+    fontWeight: 'bold',
+
+
   },
   nameContainer: {
     flexDirection: 'row',
@@ -119,6 +126,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 8,
     width: '100%', // Ensure full width for all input fields
+    backgroundColor: 'white',
   },
   passwordContainer: {
     flexDirection: 'row',
@@ -129,6 +137,23 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 10,
   },
+
+  orText: {
+    textAlign: 'center',
+    marginVertical: 10,
+    color: '#666',
+  },
+  googleButton: {
+    backgroundColor: '#eee',
+    paddingVertical: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  googleButtonText: {
+    color: '#333',
+  },
+  
   registerButton: {
     backgroundColor: '#000',
     paddingVertical: 15,

@@ -15,18 +15,20 @@ const LoginScreen = ({ email, setEmail, password, setPassword, handleAuthenticat
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>PigEx</Text>
+      <View style={styles.headerBox}>
+        <Text style={styles.title}>PigEx</Text>
+      </View>
 
       <Text style={styles.header}>Login</Text>
       <View style={styles.emailContainer}>
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email Address"
-        autoCapitalize="none"
-      />
-  </View>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email Address"
+          autoCapitalize="none"
+        />
+      </View>
 
       <View style={styles.passwordContainer}>
         <TextInput
@@ -66,15 +68,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 40,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#869F77',
     width: 400,
+  },
+  headerBox: {
+    backgroundColor: '#3E5C44',
+    paddingVertical: 20,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: 'center',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#3E5C44',
+    color: '#fff',
   },
   header: {
     fontSize: 24,
@@ -92,6 +99,7 @@ const styles = StyleSheet.create({
     paddingRight: 45, // Space for the toggle icon
     marginBottom: 10,
     paddingHorizontal: 15,
+    backgroundColor: 'white',
   },
   passwordContainer: {
     flexDirection: 'row',
