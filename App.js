@@ -8,6 +8,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import LoginScreen from './components/authentication/LoginScreen';
 import RegisterScreen from './components/authentication/RegisterScreen';
 import DashboardScreen from './components/DashboardScreen';
+import FarmNameScreen from './components/FarmNameScreen'; // Import FarmNameScreen
 
 import { auth, firestore } from './firebase/config2';
 
@@ -20,6 +21,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [isLogin, setIsLogin] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [isFarmNameSet, setIsFarmNameSet] = useState(false); // New state
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -33,14 +35,12 @@ export default function App() {
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
-          setFarmName(userData.farmName || 'No Farm Name');
+          setFarmName(userData.farmName || '');
           setFirstName(userData.firstName || '');
           setLastName(userData.lastName || '');
+          setIsFarmNameSet(!!userData.farmName); // Check if farmName is set
         } else {
           console.log('No such document in Firestore!');
-          setFarmName('No Farm Name');
-          setFirstName('');
-          setLastName('');
         }
       } else {
         console.log('User logged out.');
@@ -65,9 +65,10 @@ export default function App() {
 
         // Save user data to Firestore
         const userDoc = doc(firestore, 'users', auth.currentUser.uid);
-        await setDoc(userDoc, { farmName, firstName, lastName });
+        await setDoc(userDoc, { firstName, lastName });
 
-        console.log(`User data saved for ${auth.currentUser.uid}: Farm Name: ${farmName}, First Name: ${firstName}, Last Name: ${lastName}`);
+        console.log(`User data saved for ${auth.currentUser.uid}: First Name: ${firstName}, Last Name: ${lastName}`);
+        setIsFarmNameSet(false); // Farm name needs to be set
       }
     } catch (error) {
       console.error('Authentication error:', error.message);
@@ -90,7 +91,11 @@ export default function App() {
       {showWelcome ? (
         <WelcomeScreen onStart={() => setShowWelcome(false)} />
       ) : user ? (
-        <DashboardScreen firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />
+        isFarmNameSet ? (
+          <DashboardScreen firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />
+        ) : (
+          <FarmNameScreen onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); }} />
+        )
       ) : isLogin ? (
         <LoginScreen
           email={email}
@@ -106,8 +111,6 @@ export default function App() {
           setEmail={setEmail}
           password={password}
           setPassword={setPassword}
-          farmName={farmName}
-          setFarmName={setFarmName}
           handleAuthentication={handleAuthentication}
           navigateToLogin={() => setIsLogin(true)}
         />

@@ -1,104 +1,69 @@
 // RegisterScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
-const RegisterScreen = ({ email, setEmail, password, setPassword, farmName, setFarmName, handleAuthentication, navigateToLogin }) => {
+const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthentication, navigateToLogin }) => {
+  const [retypePassword, setRetypePassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [retypePassword, setRetypePassword] = useState('');
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [retypePasswordVisible, setRetypePasswordVisible] = useState(false);
 
   const handleRegister = () => {
     if (password !== retypePassword) {
-      Alert.alert('Error', 'Passwords do not match');
-    } else {
-      handleAuthentication(firstName, lastName); // Pass firstName and lastName
+      alert("Passwords don't match!");
+      return;
     }
+    handleAuthentication(firstName, lastName); // Pass the firstName and lastName to the handleAuthentication function
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>PigEx</Text>
-
-      <Text style={styles.header}>Create your account</Text>
+      <Text style={styles.header}>Register</Text>
       
       <TextInput
         style={styles.input}
-        value={farmName}
-        onChangeText={setFarmName}
-        placeholder="Farm Name"
+        value={firstName}
+        onChangeText={setFirstName}
+        placeholder="First Name"
       />
-
-      <View style={styles.nameContainer}>
-        <TextInput
-          style={[styles.input, styles.nameInput]}
-          value={firstName}
-          onChangeText={setFirstName}
-          placeholder="First Name"
-        />
-
-        <TextInput
-          style={[styles.input, styles.nameInput]}
-          value={lastName}
-          onChangeText={setLastName}
-          placeholder="Last Name"
-        />
-      </View>
-
+      
+      <TextInput
+        style={styles.input}
+        value={lastName}
+        onChangeText={setLastName}
+        placeholder="Last Name"
+      />
+      
       <TextInput
         style={styles.input}
         value={email}
         onChangeText={setEmail}
-        placeholder="Email Address"
+        placeholder="Email"
+        keyboardType="email-address"
         autoCapitalize="none"
       />
-
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-          secureTextEntry={!passwordVisible}
-        />
-        <TouchableOpacity
-          onPress={() => setPasswordVisible(!passwordVisible)}
-          style={styles.toggleIcon}
-        >
-          <Ionicons name={passwordVisible ? "eye-off" : "eye"} size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.input}
-          value={retypePassword}
-          onChangeText={setRetypePassword}
-          placeholder="Retype Password"
-          secureTextEntry={!retypePasswordVisible}
-        />
-        <TouchableOpacity
-          onPress={() => setRetypePasswordVisible(!retypePasswordVisible)}
-          style={styles.toggleIcon}
-        >
-          <Ionicons name={retypePasswordVisible ? "eye-off" : "eye"} size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.orText}>or continue with</Text>
-
-      <TouchableOpacity style={styles.googleButton}>
-        <Text style={styles.googleButtonText}>Google</Text>
-      </TouchableOpacity>
-
+      
+      <TextInput
+        style={styles.input}
+        value={password}
+        onChangeText={setPassword}
+        placeholder="Password"
+        secureTextEntry
+      />
+      
+      <TextInput
+        style={styles.input}
+        value={retypePassword}
+        onChangeText={setRetypePassword}
+        placeholder="Retype Password"
+        secureTextEntry
+      />
+      
       <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-        <Text style={styles.registerButtonText}>Submit</Text>
+        <Text style={styles.registerButtonText}>Register</Text>
       </TouchableOpacity>
-
+      
       <TouchableOpacity onPress={navigateToLogin}>
-        <Text style={styles.toggleText}>Login</Text>
+        <Text style={styles.switchToLoginText}>Already have an account? Login</Text>
       </TouchableOpacity>
     </View>
   );
@@ -108,16 +73,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 40,
+    padding: 20,
     backgroundColor: '#FFFFFF',
-    width: 400,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#3E5C44',
   },
   header: {
     fontSize: 24,
@@ -126,62 +83,27 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   input: {
-    flex: 1,
     height: 50,
     borderColor: '#ddd',
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 15,
     borderRadius: 8,
-    paddingRight: 45, // Space for the toggle icon
-  },
-  nameContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  nameInput: {
-    flex: 0.48, // Adjusts the width of the first and last name inputs
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    position: 'relative',
-  },
-  toggleIcon: {
-    position: 'absolute',
-    right: 10,
-  },
-  orText: {
-    textAlign: 'center',
-    marginVertical: 10,
-    color: '#666',
-  },
-  googleButton: {
-    backgroundColor: '#eee',
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  googleButtonText: {
-    color: '#333',
   },
   registerButton: {
     backgroundColor: '#000',
     paddingVertical: 15,
     borderRadius: 8,
-    marginBottom: 10,
     alignItems: 'center',
   },
   registerButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
-  toggleText: {
+  switchToLoginText: {
+    marginTop: 20,
+    color: '#333',
     textAlign: 'center',
-    color: '#000',
-    fontWeight: 'bold',
   },
 });
 
