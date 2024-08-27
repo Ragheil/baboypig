@@ -1,16 +1,20 @@
-// App.js
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { StyleSheet } from 'react-native';
 
 import WelcomeScreen from './components/WelcomeScreen';
 import LoginScreen from './components/authentication/LoginScreen';
 import RegisterScreen from './components/authentication/RegisterScreen';
 import DashboardScreen from './components/DashboardScreen';
-import FarmNameScreen from './components/FarmNameScreen'; // Import FarmNameScreen
+import FarmNameScreen from './components/FarmNameScreen'; 
+import ContactScreen from './components/ContactScreen'; 
 
 import { auth, firestore } from './firebase/config2';
+
+const Stack = createStackNavigator();
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -21,7 +25,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [isLogin, setIsLogin] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [isFarmNameSet, setIsFarmNameSet] = useState(false); // New state
+  const [isFarmNameSet, setIsFarmNameSet] = useState(false); 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -29,7 +33,6 @@ export default function App() {
         setUser(user);
         console.log(`User logged in: ${user.email}`);
 
-        // Retrieve farmName and other user data from Firestore
         const docRef = doc(firestore, 'users', user.uid);
         const docSnap = await getDoc(docRef);
 
@@ -38,7 +41,7 @@ export default function App() {
           setFarmName(userData.farmName || '');
           setFirstName(userData.firstName || '');
           setLastName(userData.lastName || '');
-          setIsFarmNameSet(!!userData.farmName); // Check if farmName is set
+          setIsFarmNameSet(!!userData.farmName);
         } else {
           console.log('No such document in Firestore!');
         }
@@ -63,12 +66,11 @@ export default function App() {
         await createUserWithEmailAndPassword(auth, email, password);
         console.log(`User created successfully: ${email}`);
 
-        // Save user data to Firestore
         const userDoc = doc(firestore, 'users', auth.currentUser.uid);
         await setDoc(userDoc, { firstName, lastName });
 
         console.log(`User data saved for ${auth.currentUser.uid}: First Name: ${firstName}, Last Name: ${lastName}`);
-        setIsFarmNameSet(false); // Farm name needs to be set
+        setIsFarmNameSet(false);
       }
     } catch (error) {
       console.error('Authentication error:', error.message);
@@ -87,35 +89,73 @@ export default function App() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {showWelcome ? (
-        <WelcomeScreen onStart={() => setShowWelcome(false)} />
-      ) : user ? (
-        isFarmNameSet ? (
-          <DashboardScreen firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Welcome">
+        {showWelcome ? (
+          <Stack.Screen 
+            name="Welcome" 
+            options={{ headerShown: false }} // Hide title
+          >
+            {(props) => <WelcomeScreen {...props} onStart={() => setShowWelcome(false)} />}
+          </Stack.Screen>
+        ) : user ? (
+          isFarmNameSet ? (
+            <Stack.Screen 
+              name="Dashboard" 
+              options={{ headerShown: false }} // Hide title
+            >
+              {(props) => <DashboardScreen {...props} firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen 
+              name="FarmName" 
+              options={{ headerShown: false }} // Hide title
+            >
+              {(props) => <FarmNameScreen {...props} onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); }} />}
+            </Stack.Screen>
+          )
+        ) : isLogin ? (
+          <Stack.Screen 
+            name="Login" 
+            options={{ headerShown: false }} // Hide title
+          >
+            {(props) => (
+              <LoginScreen
+                {...props}
+                email={email}
+                setEmail={setEmail}
+                password={password}
+                setPassword={setPassword}
+                handleAuthentication={handleAuthentication}
+                navigateToRegister={() => setIsLogin(false)}
+              />
+            )}
+          </Stack.Screen>
         ) : (
-          <FarmNameScreen onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); }} />
-        )
-      ) : isLogin ? (
-        <LoginScreen
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          handleAuthentication={handleAuthentication}
-          navigateToRegister={() => setIsLogin(false)}
+          <Stack.Screen 
+            name="Register" 
+            options={{ headerShown: false }} // Hide title
+          >
+            {(props) => (
+              <RegisterScreen
+                {...props}
+                email={email}
+                setEmail={setEmail}
+                password={password}
+                setPassword={setPassword}
+                handleAuthentication={handleAuthentication}
+                navigateToLogin={() => setIsLogin(true)}
+              />
+            )}
+          </Stack.Screen>
+        )}
+        <Stack.Screen 
+          name="ContactScreen" 
+          component={ContactScreen} 
+          options={{ headerShown: false }} // Hide title
         />
-      ) : (
-        <RegisterScreen
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          handleAuthentication={handleAuthentication}
-          navigateToLogin={() => setIsLogin(true)}
-        />
-      )}
-    </ScrollView>
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 

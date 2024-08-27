@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, TouchableWithoutFeedback, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native'; // Import navigation hook
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const sidebarTranslateX = useState(new Animated.Value(Dimensions.get('window').width))[0];
+  const navigation = useNavigation(); // Use navigation
 
   const toggleSidebar = () => {
     Animated.timing(sidebarTranslateX, {
@@ -62,7 +64,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             <Image source={require('./images/navigation/plus.png')} style={styles.footerImage} />
             <Text style={styles.footerText}>Plus</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.footerItem}>
+          <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('ContactScreen', { firstName, lastName, farmName })}>
             <Image source={require('./images/navigation/contact.png')} style={styles.footerImage} />
             <Text style={styles.footerText}>Contact</Text>
           </TouchableOpacity>
@@ -95,6 +97,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -104,19 +107,6 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
-  },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  userNameText: {
-    fontSize: 22,
-    marginBottom: 8,
-  },
-  farmNameText: {
-    fontSize: 20,
-    marginBottom: 32,
   },
   footer: {
     flexDirection: 'row',
@@ -143,7 +133,7 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#588061',
     padding: 20,
-    paddingTop: 40, // Add padding to the top for the close button
+    paddingTop: 40, 
   },
   closeButton: {
     position: 'absolute',
@@ -155,7 +145,7 @@ const styles = StyleSheet.create({
     color: '#050505',
   },
   sidebarHeader: {
-    marginTop: 40, // Ensure there's space below the close button
+    marginTop: 40, 
     marginBottom: 20,
   },
   sidebarText: {
@@ -167,9 +157,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: Dimensions.get('window').width * 0.25, // Covers the remaining 25% of the screen
+    width: Dimensions.get('window').width * 0.25,
     height: '100%',
-    backgroundColor: 'transparent', // Transparent background
+    backgroundColor: 'transparent', 
   },
   divider: {
     

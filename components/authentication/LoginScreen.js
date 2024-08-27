@@ -82,12 +82,17 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
+    
+    
+    
   },
   header: {
     fontSize: 24,
     textAlign: 'center',
     marginBottom: 20,
     color: '#333',
+    
+    
   },
   input: {
     flex: 1,
@@ -100,6 +105,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 15,
     backgroundColor: 'white',
+    
   },
   passwordContainer: {
     flexDirection: 'row',
