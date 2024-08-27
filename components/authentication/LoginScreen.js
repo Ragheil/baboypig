@@ -26,7 +26,7 @@ const LoginScreen = ({ email, setEmail, password, setPassword, handleAuthenticat
           value={email}
           onChangeText={setEmail}
           placeholder="Email Address"
-          autoCapitalize="none"
+          placeholderTextColor="#666"
         />
       </View>
 
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 40,
     backgroundColor: '#869F77',
-    width: 400,
+    width: '100%',
   },
   headerBox: {
     backgroundColor: '#3E5C44',
@@ -82,30 +82,28 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
-    
-    
-    
   },
   header: {
     fontSize: 24,
     textAlign: 'center',
     marginBottom: 20,
     color: '#333',
-    
-    
+  },
+  emailContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    position: 'relative',
   },
   input: {
-    flex: 1,
     height: 50,
     borderColor: '#ddd',
     borderWidth: 1,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    paddingRight: 45, // Space for the toggle icon
     marginBottom: 10,
     paddingHorizontal: 15,
+    borderRadius: 8,
+    width: '100%', // Ensure full width for all input fields
     backgroundColor: 'white',
-    
   },
   passwordContainer: {
     flexDirection: 'row',
@@ -116,6 +114,9 @@ const styles = StyleSheet.create({
   toggleIcon: {
     position: 'absolute',
     right: 10,
+    top: '50%',
+    
+    transform: [{ translateY: -12 }], // Adjust position vertically
   },
   orText: {
     textAlign: 'center',

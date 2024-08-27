@@ -39,6 +39,11 @@ const ContactScreen = ({ navigation }) => {
       return;
     }
 
+    if (contactNumber.length !== 11) {
+      Alert.alert('Validation Error', 'Contact number must be 11 digits long.');
+      return;
+    }
+
     try {
       if (!user) return;
 
@@ -66,6 +71,18 @@ const ContactScreen = ({ navigation }) => {
     } catch (error) {
       console.error('Error adding/updating contact:', error);
     }
+  };
+
+  const confirmDeleteContact = (contactId) => {
+    Alert.alert(
+      'Confirm Deletion',
+      'Are you sure you want to delete this contact?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', onPress: () => deleteContact(contactId) },
+      ],
+      { cancelable: false }
+    );
   };
 
   const deleteContact = async (contactId) => {
@@ -110,6 +127,7 @@ const ContactScreen = ({ navigation }) => {
         value={contactNumber}
         onChangeText={setContactNumber}
         keyboardType="phone-pad"
+        maxLength={11} // Limit input length to 11 digits
       />
       <Button title={editContactId ? "Update Contact" : "Add Contact"} onPress={addOrUpdateContact} color="#4CAF50" />
 
@@ -129,7 +147,7 @@ const ContactScreen = ({ navigation }) => {
               <TouchableOpacity onPress={() => startEditContact(item)}>
                 <Text style={styles.actionText}>Edit</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => deleteContact(item.id)}>
+              <TouchableOpacity onPress={() => confirmDeleteContact(item.id)}>
                 <Text style={styles.actionText}>Delete</Text>
               </TouchableOpacity>
             </View>
