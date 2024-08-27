@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
+import { View, Text, Button, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, TouchableWithoutFeedback, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Divider } from 'react-native-paper';
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -26,17 +27,26 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     }
   };
 
+  const confirmLogout = () => {
+    Alert.alert(
+      'Logout Confirmation',
+      'Do you want to logout?',
+      [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', onPress: onLogout },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
-        colors={['#FDE9EA', '#869F77', '#588061']} // Gradient colors
+        colors={['#FDE9EA', '#869F77', '#588061']}
         style={styles.gradient}
       >
         <View style={styles.container}>
-          <Text style={styles.welcomeText}>Welcome to your dashboard!</Text>
-          <Text style={styles.userNameText}>{firstName} {lastName}</Text>
-          <Text style={styles.farmNameText}>Farm Name: {farmName}</Text>
-          <Button title="Logout" onPress={onLogout} color="#FF6347" />
+          {/* Your content */}
         </View>
 
         <View style={styles.footer}>
@@ -74,15 +84,17 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           <Text style={styles.closeButtonText}>X</Text>
         </TouchableOpacity>
         <View style={styles.sidebarHeader}>
+          <Divider />
           <Text style={styles.sidebarText}>{firstName} {lastName}</Text>
           <Text style={styles.sidebarText}>Farm Name: {farmName}</Text>
+          <Divider style={styles.divider} />
         </View>
+        <Button title="Logout" onPress={confirmLogout} color="#FF6347" />
         {/* Add other sidebar items here */}
       </Animated.View>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -158,5 +170,8 @@ const styles = StyleSheet.create({
     width: Dimensions.get('window').width * 0.25, // Covers the remaining 25% of the screen
     height: '100%',
     backgroundColor: 'transparent', // Transparent background
+  },
+  divider: {
+    
   },
 });
