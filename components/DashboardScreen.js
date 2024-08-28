@@ -53,23 +53,23 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
 
         <View style={styles.footer}>
           <TouchableOpacity style={styles.footerItem}>
-            <Image source={require('./images/navigation/home.png')} style={styles.footerImage} />
+            <Image source={require('../assets/images/navigation/home.png')} style={styles.footerImage} />
             <Text style={styles.footerText}>Home</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.footerItem}>
-            <Image source={require('./images/navigation/transaction.png')} style={styles.footerImage} />
+            <Image source={require('../assets/images/navigation/transaction.png')} style={styles.footerImage} />
             <Text style={styles.footerText}>Transaction</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.footerItem}>
-            <Image source={require('./images/navigation/plus.png')} style={styles.footerImage} />
+            <Image source={require('../assets/images/navigation/plus.png')} style={styles.footerImage} />
             <Text style={styles.footerText}>Plus</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('ContactScreen', { firstName, lastName, farmName })}>
-            <Image source={require('./images/navigation/contact.png')} style={styles.footerImage} />
+            <Image source={require('../assets/images/navigation/contact.png')} style={styles.footerImage} />
             <Text style={styles.footerText}>Contact</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.footerItem} onPress={toggleSidebar}>
-            <Image source={require('./images/navigation/menu.png')} style={styles.footerImage} />
+            <Image source={require('../assets/images/navigation/menu.png')} style={styles.footerImage} />
             <Text style={styles.footerText}>Menu</Text>
           </TouchableOpacity>
         </View>
