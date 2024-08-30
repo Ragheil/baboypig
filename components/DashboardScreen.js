@@ -1,13 +1,40 @@
-import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, TouchableWithoutFeedback, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+  TouchableWithoutFeedback,
+  Alert,
+  FlatList,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native'; // Import navigation hook
+import { useNavigation } from '@react-navigation/native';
+import { collection, query, onSnapshot, limit } from 'firebase/firestore';
+import { firestore } from '../firebase/config2';
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [pigGroups, setPigGroups] = useState([]);
   const sidebarTranslateX = useState(new Animated.Value(Dimensions.get('window').width))[0];
-  const navigation = useNavigation(); // Use navigation
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const q = query(collection(firestore, 'pigGroups'), limit(3));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const groups = [];
+      snapshot.forEach((doc) => {
+        groups.push({ id: doc.id, ...doc.data() });
+      });
+      setPigGroups(groups);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const toggleSidebar = () => {
     Animated.timing(sidebarTranslateX, {
@@ -48,9 +75,31 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         style={styles.gradient}
       >
         <View style={styles.container}>
-          {/* Your content */}
+          <Text style={styles.title}>Pig Groups Summary</Text>
+          <FlatList
+            data={pigGroups}
+            renderItem={({ item }) => (
+              <View style={styles.pigGroupSummary}>
+                <Text style={styles.pigGroupText}>{item.name}</Text>
+              </View>
+            )}
+            keyExtractor={(item) => item.id}
+            ListEmptyComponent={<Text>No pig groups available.</Text>}
+          />
         </View>
 
+        {/* See All Button - moved outside FlatList for better responsiveness */}
+        <TouchableOpacity
+          style={styles.seeAllButton}
+          onPress={() => {
+            console.log("See All button pressed");
+            navigation.navigate('PigGroups');
+          }}
+        >
+          <Text style={styles.seeAllText}>See All</Text>
+        </TouchableOpacity>
+
+        {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity style={styles.footerItem}>
             <Image source={require('../assets/images/navigation/home.png')} style={styles.footerImage} />
@@ -64,7 +113,10 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             <Image source={require('../assets/images/navigation/plus.png')} style={styles.footerImage} />
             <Text style={styles.footerText}>Plus</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('ContactScreen', { firstName, lastName, farmName })}>
+          <TouchableOpacity
+            style={styles.footerItem}
+            onPress={() => navigation.navigate('ContactScreen', { firstName, lastName, farmName })}
+          >
             <Image source={require('../assets/images/navigation/contact.png')} style={styles.footerImage} />
             <Text style={styles.footerText}>Contact</Text>
           </TouchableOpacity>
@@ -73,95 +125,123 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             <Text style={styles.footerText}>Menu</Text>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
 
-      {sidebarVisible && (
+        {/* Sidebar */}
         <TouchableWithoutFeedback onPress={closeSidebar}>
-          <View style={styles.overlay} />
+          <Animated.View style={[styles.sidebarOverlay, { opacity: sidebarVisible ? 0.5 : 0 }]} />
         </TouchableWithoutFeedback>
-      )}
-
-      <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarTranslateX }] }]}>
-        <TouchableOpacity style={styles.closeButton} onPress={toggleSidebar}>
-          <Text style={styles.closeButtonText}>X</Text>
-        </TouchableOpacity>
-        <View style={styles.sidebarHeader}>
-          <Divider />
-          <Text style={styles.sidebarText}>{firstName} {lastName}</Text>
-          <Text style={styles.sidebarText}>Farm Name: {farmName}</Text>
-          <Divider style={styles.divider} />
-        </View>
-        <Button title="Logout" onPress={confirmLogout} color="#FF6347" />
-        {/* Add other sidebar items here */}
-      </Animated.View>
+        <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarTranslateX }] }]}>
+          <Text style={styles.sidebarHeader}>{firstName} {lastName}</Text>
+          <Divider style={{ backgroundColor: '#869F77', height: 1, marginBottom: 20 }} />
+          <Text style={styles.sidebarText}>Farm: {farmName}</Text>
+          <TouchableOpacity style={styles.sidebarButton} onPress={confirmLogout}>
+            <Text style={styles.sidebarButtonText}>Logout</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 16,
   },
-  gradient: {
-    flex: 1,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  pigGroupSummary: {
+    padding: 15,
+    marginVertical: 10,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  pigGroupText: {
+    fontSize: 18,
+    color: '#333',
+  },
+  seeAllButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#869F77',
+    borderRadius: 5,
+    alignItems: 'center',
+    zIndex: 10,  // Ensures button is on top
+    elevation: 5, // Adds elevation on Android
+  },
+  seeAllText: {
+    color: '#fff',
+    fontSize: 18,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    zIndex: 3, // Ensures footer is on top
   },
   footerItem: {
     alignItems: 'center',
   },
   footerImage: {
-    width: 30,
-    height: 30,
-    marginBottom: 5,
+    width: 24,
+    height: 24,
   },
   footerText: {
     fontSize: 12,
+    marginTop: 5,
+  },
+  sidebarOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#000',
+    zIndex: 1,
   },
   sidebar: {
     position: 'absolute',
     top: 0,
+    bottom: 0,
     right: 0,
-    width: Dimensions.get('window').width * 0.75,
-    height: '100%',
-    backgroundColor: '#588061',
+    width: '80%',
+    backgroundColor: '#fff',
     padding: 20,
-    paddingTop: 40, 
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 30,
-    left: 20,
-  },
-  closeButtonText: {
-    fontSize: 30,
-    color: '#050505',
+    zIndex: 2,
+    elevation: 3,
   },
   sidebarHeader: {
-    marginTop: 40, 
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 20,
   },
   sidebarText: {
     fontSize: 18,
-    color: '#000000',
-    marginBottom: 10,
+    marginBottom: 20,
   },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: Dimensions.get('window').width * 0.25,
-    height: '100%',
-    backgroundColor: 'transparent', 
+  sidebarButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#869F77',
+    borderRadius: 5,
   },
-  divider: {
-    
+  sidebarButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    textAlign: 'center',
   },
 });

@@ -9,8 +9,9 @@ import WelcomeScreen from './components/WelcomeScreen';
 import LoginScreen from './components/authentication/LoginScreen';
 import RegisterScreen from './components/authentication/RegisterScreen';
 import DashboardScreen from './components/DashboardScreen';
-import FarmNameScreen from './components/FarmNameScreen'; 
-import ContactScreen from './components/ContactScreen'; 
+import FarmNameScreen from './components/FarmNameScreen';
+import ContactScreen from './components/ContactScreen';
+import PigGroupsScreen from './components/PigGroupsScreen';
 
 import { auth, firestore } from './firebase/config2';
 
@@ -25,7 +26,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [isLogin, setIsLogin] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [isFarmNameSet, setIsFarmNameSet] = useState(false); 
+  const [isFarmNameSet, setIsFarmNameSet] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -90,34 +91,34 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Welcome">
+      <Stack.Navigator>
         {showWelcome ? (
-          <Stack.Screen 
-            name="Welcome" 
-            options={{ headerShown: false }} // Hide title
+          <Stack.Screen
+            name="Welcome"
+            options={{ headerShown: false }}
           >
             {(props) => <WelcomeScreen {...props} onStart={() => setShowWelcome(false)} />}
           </Stack.Screen>
         ) : user ? (
           isFarmNameSet ? (
-            <Stack.Screen 
-              name="Dashboard" 
-              options={{ headerShown: false }} // Hide title
+            <Stack.Screen
+              name="Dashboard"
+              options={{ headerShown: false }}
             >
               {(props) => <DashboardScreen {...props} firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />}
             </Stack.Screen>
           ) : (
-            <Stack.Screen 
-              name="FarmName" 
-              options={{ headerShown: false }} // Hide title
+            <Stack.Screen
+              name="FarmName"
+              options={{ headerShown: false }}
             >
               {(props) => <FarmNameScreen {...props} onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); }} />}
             </Stack.Screen>
           )
         ) : isLogin ? (
-          <Stack.Screen 
-            name="Login" 
-            options={{ headerShown: false }} // Hide title
+          <Stack.Screen
+            name="Login"
+            options={{ headerShown: false }}
           >
             {(props) => (
               <LoginScreen
@@ -132,9 +133,9 @@ export default function App() {
             )}
           </Stack.Screen>
         ) : (
-          <Stack.Screen 
-            name="Register" 
-            options={{ headerShown: false }} // Hide title
+          <Stack.Screen
+            name="Register"
+            options={{ headerShown: false }}
           >
             {(props) => (
               <RegisterScreen
@@ -149,10 +150,15 @@ export default function App() {
             )}
           </Stack.Screen>
         )}
-        <Stack.Screen 
-          name="ContactScreen" 
-          component={ContactScreen} 
-          options={{ headerShown: false }} // Hide title
+        <Stack.Screen
+          name="ContactScreen"
+          component={ContactScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PigGroups"
+          component={PigGroupsScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
