@@ -12,6 +12,7 @@ import DashboardScreen from './components/DashboardScreen';
 import FarmNameScreen from './components/FarmNameScreen';
 import ContactScreen from './components/ContactScreen';
 import PigGroupsScreen from './components/PigGroupsScreen';
+import AddPigInfoScreen from './components/AddPigInfoScreen'; // Import the new AddPigInfoScreen
 
 import { auth, firestore } from './firebase/config2';
 
@@ -158,6 +159,11 @@ export default function App() {
         <Stack.Screen
           name="PigGroups"
           component={PigGroupsScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddPigInfo"
+          component={AddPigInfoScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

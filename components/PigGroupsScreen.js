@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, TouchableOpacity } from 'react-native';
 import { addDoc, collection, query, onSnapshot } from 'firebase/firestore';
 import { firestore } from '../firebase/config2';
+import { useNavigation } from '@react-navigation/native'; // Import useNavigation
 
 export default function PigGroupsScreen() {
   const [pigGroupName, setPigGroupName] = useState('');
   const [pigGroups, setPigGroups] = useState([]);
+  const navigation = useNavigation(); // Initialize navigation
 
   // Function to add a new pig group to Firestore
   const handleAddPigGroup = async () => {
@@ -43,7 +45,10 @@ export default function PigGroupsScreen() {
 
   // Function to render each pig group item
   const renderPigGroup = ({ item }) => (
-    <TouchableOpacity style={styles.pigGroupBox} onPress={() => Alert.alert('Pig Group Selected', `You selected ${item.name}`)}>
+    <TouchableOpacity
+      style={styles.pigGroupBox}
+      onPress={() => navigation.navigate('AddPigInfo', { pigGroupId: item.id })} // Navigate to AddPigInfoScreen with pigGroupId
+    >
       <Text style={styles.pigGroupText}>{item.name}</Text>
     </TouchableOpacity>
   );
@@ -94,15 +99,12 @@ const styles = StyleSheet.create({
   },
   pigGroupBox: {
     padding: 15,
-    marginVertical: 10,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginBottom: 10,
+    borderRadius: 5,
+    elevation: 2,
   },
   pigGroupText: {
     fontSize: 18,
-    color: '#333',
   },
 });
