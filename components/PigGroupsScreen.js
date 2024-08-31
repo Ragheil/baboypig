@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native'; // Import useNavigatio
 export default function PigGroupsScreen() {
   const [pigGroupName, setPigGroupName] = useState('');
   const [pigGroups, setPigGroups] = useState([]);
+  const [searchQuery, setSearchQuery] = useState(''); // State for search query
   const navigation = useNavigation(); // Initialize navigation
 
   // Function to add a new pig group to Firestore
@@ -43,6 +44,11 @@ export default function PigGroupsScreen() {
     return () => unsubscribe();
   }, []);
 
+  // Filtered pig groups based on search query
+  const filteredPigGroups = pigGroups.filter(group =>
+    group.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Function to render each pig group item
   const renderPigGroup = ({ item }) => (
     <TouchableOpacity
@@ -64,8 +70,15 @@ export default function PigGroupsScreen() {
       />
       <Button title="Add Pig Group" onPress={handleAddPigGroup} />
 
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search Pig Groups"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+
       <FlatList
-        data={pigGroups}
+        data={filteredPigGroups}
         renderItem={renderPigGroup}
         keyExtractor={(item) => item.id}
         style={styles.list}
@@ -87,6 +100,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
+    width: '100%',
+    padding: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+  },
+  searchInput: {
     width: '100%',
     padding: 10,
     marginBottom: 20,
