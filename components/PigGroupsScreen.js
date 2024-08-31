@@ -119,16 +119,17 @@ const PigGroupsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-    <Text style={styles.title}>Pig Information</Text>
+      <Text style={styles.title}>Pig Information</Text>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search by name"
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
-
-      <Button title="Add Pig Group" onPress={openAddPigGroupModal} color="#4CAF50" />
+      <View style={styles.searchAndAddContainer}>
+        <Button title="Add Pig Group" onPress={openAddPigGroupModal} color="#4CAF50" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by name"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
 
       <Text style={styles.tableHeader}>Pig Groups</Text>
       <FlatList
@@ -193,13 +194,18 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f8f8f8',
   },
+  searchAndAddContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   searchInput: {
-    width: '100%',
+    flex: 1,
     padding: 10,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    marginBottom: 20,
+    marginLeft: 10,
   },
   tableHeader: {
     fontSize: 18,
