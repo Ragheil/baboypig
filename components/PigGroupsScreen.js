@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, TouchableOpacity } from 'react-native';
-import { addDoc, collection, query, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, query, onSnapshot, deleteDoc, doc, updateDoc, where, getDocs } from 'firebase/firestore';
 import { firestore } from '../firebase/config2';
 import { useNavigation } from '@react-navigation/native';
 import Modal from 'react-native-modal';
@@ -9,33 +9,14 @@ export default function PigGroupsScreen() {
   const [pigGroupName, setPigGroupName] = useState('');
   const [pigGroups, setPigGroups] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isDeleteModal, setIsDeleteModal] = useState(false);
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [currentPigGroupId, setCurrentPigGroupId] = useState(null);
   const [currentPigGroupName, setCurrentPigGroupName] = useState('');
   const [newName, setNewName] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const navigation = useNavigation();
-
-  // Function to add a new pig group to Firestore
-  const handleAddPigGroup = async () => {
-    if (pigGroupName.trim() === '') {
-      Alert.alert('Validation Error', 'Pig group name cannot be empty.');
-      return;
-    }
-
-    try {
-      await addDoc(collection(firestore, 'pigGroups'), {
-        name: pigGroupName,
-        createdAt: new Date(),
-      });
-      Alert.alert('Success', 'Pig group added successfully!');
-      setPigGroupName('');
-    } catch (error) {
-      console.error('Error adding pig group:', error);
-      Alert.alert('Error', 'There was a problem adding the pig group.');
-    }
-  };
 
   // Fetch pig groups from Firestore
   useEffect(() => {
@@ -56,20 +37,39 @@ export default function PigGroupsScreen() {
     group.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Function to handle deleting a pig group
-  const handleDeletePigGroup = async () => {
-    if (deleteConfirmation === currentPigGroupName) {
-      try {
-        await deleteDoc(doc(firestore, 'pigGroups', currentPigGroupId));
-        Alert.alert('Success', 'Pig group deleted successfully!');
-        setIsDeleteModal(false);
-        setDeleteConfirmation('');
-      } catch (error) {
-        console.error('Error deleting pig group:', error);
-        Alert.alert('Error', 'There was a problem deleting the pig group.');
-      }
-    } else {
-      Alert.alert('Validation Error', 'Pig group name does not match.');
+  // Check if a pig group name exists
+  const checkPigGroupNameExists = async (name, excludeId = null) => {
+    const q = query(collection(firestore, 'pigGroups'), where('name', '==', name));
+    if (excludeId) {
+      q = query(q, where('id', '!=', excludeId));
+    }
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  };
+
+  // Function to add a new pig group to Firestore
+  const handleAddPigGroup = async () => {
+    if (pigGroupName.trim() === '') {
+      Alert.alert('Validation Error', 'Pig group name cannot be empty.');
+      return;
+    }
+
+    if (await checkPigGroupNameExists(pigGroupName)) {
+      Alert.alert('Validation Error', 'Pig group name already exists.');
+      return;
+    }
+
+    try {
+      await addDoc(collection(firestore, 'pigGroups'), {
+        name: pigGroupName,
+        createdAt: new Date(),
+      });
+      Alert.alert('Success', 'Pig group added successfully!');
+      setPigGroupName('');
+      setIsAddModalVisible(false);
+    } catch (error) {
+      console.error('Error adding pig group:', error);
+      Alert.alert('Error', 'There was a problem adding the pig group.');
     }
   };
 
@@ -80,16 +80,38 @@ export default function PigGroupsScreen() {
       return;
     }
 
+    if (await checkPigGroupNameExists(newName, currentPigGroupId)) {
+      Alert.alert('Validation Error', 'Pig group name already exists.');
+      return;
+    }
+
     try {
       await updateDoc(doc(firestore, 'pigGroups', currentPigGroupId), {
         name: newName,
       });
       Alert.alert('Success', 'Pig group updated successfully!');
-      setIsModalVisible(false);
+      setIsEditModalVisible(false);
       setNewName('');
     } catch (error) {
       console.error('Error updating pig group:', error);
       Alert.alert('Error', 'There was a problem updating the pig group.');
+    }
+  };
+
+  // Function to handle deleting a pig group
+  const handleDeletePigGroup = async () => {
+    if (deleteConfirmation === currentPigGroupName) {
+      try {
+        await deleteDoc(doc(firestore, 'pigGroups', currentPigGroupId));
+        Alert.alert('Success', 'Pig group deleted successfully!');
+        setIsDeleteModalVisible(false);
+        setDeleteConfirmation('');
+      } catch (error) {
+        console.error('Error deleting pig group:', error);
+        Alert.alert('Error', 'There was a problem deleting the pig group.');
+      }
+    } else {
+      Alert.alert('Validation Error', 'Pig group name does not match.');
     }
   };
 
@@ -103,12 +125,12 @@ export default function PigGroupsScreen() {
         <Button title="Edit" onPress={() => {
           setCurrentPigGroupId(item.id);
           setNewName(item.name);
-          setIsModalVisible(true);
+          setIsEditModalVisible(true);
         }} />
         <Button title="Delete" color="red" onPress={() => {
           setCurrentPigGroupId(item.id);
           setCurrentPigGroupName(item.name);
-          setIsDeleteModal(true);
+          setIsDeleteModalVisible(true);
         }} />
       </View>
     </View>
@@ -116,14 +138,7 @@ export default function PigGroupsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add Pig Group</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Pig Group Name"
-        value={pigGroupName}
-        onChangeText={setPigGroupName}
-      />
-      <Button title="Add Pig Group" onPress={handleAddPigGroup} />
+      <Button title="Add Pig Group" onPress={() => setIsAddModalVisible(true)} />
 
       <TextInput
         style={styles.searchInput}
@@ -140,8 +155,23 @@ export default function PigGroupsScreen() {
         contentContainerStyle={{ paddingBottom: 20 }}
       />
 
+      {/* Modal for adding pig group */}
+      <Modal isVisible={isAddModalVisible} onBackdropPress={() => setIsAddModalVisible(false)}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Add Pig Group</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Pig Group Name"
+            value={pigGroupName}
+            onChangeText={setPigGroupName}
+          />
+          <Button title="Add Pig Group" onPress={handleAddPigGroup} />
+          <Button title="Cancel" onPress={() => setIsAddModalVisible(false)} color="red" />
+        </View>
+      </Modal>
+
       {/* Modal for updating pig group */}
-      <Modal isVisible={isModalVisible} onBackdropPress={() => setIsModalVisible(false)}>
+      <Modal isVisible={isEditModalVisible} onBackdropPress={() => setIsEditModalVisible(false)}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Update Pig Group</Text>
           <TextInput
@@ -151,12 +181,12 @@ export default function PigGroupsScreen() {
             onChangeText={setNewName}
           />
           <Button title="Save Changes" onPress={handleUpdatePigGroup} />
-          <Button title="Cancel" onPress={() => setIsModalVisible(false)} color="red" />
+          <Button title="Cancel" onPress={() => setIsEditModalVisible(false)} color="red" />
         </View>
       </Modal>
 
       {/* Modal for delete confirmation */}
-      <Modal isVisible={isDeleteModal} onBackdropPress={() => setIsDeleteModal(false)}>
+      <Modal isVisible={isDeleteModalVisible} onBackdropPress={() => setIsDeleteModalVisible(false)}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Confirm Deletion</Text>
           <Text style={styles.warningText}>
@@ -169,7 +199,7 @@ export default function PigGroupsScreen() {
             onChangeText={setDeleteConfirmation}
           />
           <Button title="Delete" onPress={handleDeletePigGroup} />
-          <Button title="Cancel" onPress={() => setIsDeleteModal(false)} color="red" />
+          <Button title="Cancel" onPress={() => setIsDeleteModalVisible(false)} color="red" />
         </View>
       </Modal>
     </View>
@@ -181,11 +211,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f8f8f8',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    textAlign: 'center',
   },
   input: {
     width: '100%',
