@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList } from 'react-native';
-import { addDoc, collection, query, onSnapshot, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { addDoc, collection, query, onSnapshot, doc, updateDoc, deleteDoc, getDoc, getDocs } from 'firebase/firestore';
 import { firestore } from '../firebase/config2';
 import { Picker } from '@react-native-picker/picker';
 
@@ -48,9 +48,37 @@ export default function AddPigInfoScreen({ route, navigation }) {
     fetchPigs();
   }, [pigGroupId]);
 
+  const checkForDuplicates = async () => {
+    const q = query(collection(firestore, 'pigGroups', pigGroupId, 'pigs'));
+
+    try {
+      const querySnapshot = await getDocs(q);
+      let exists = false;
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if ((data.pigName === pigName || data.tagNumber === tagNumber) && (currentPigId === null || doc.id !== currentPigId)) {
+          exists = true;
+        }
+      });
+
+      return exists;
+    } catch (error) {
+      console.error('Error checking for duplicates:', error);
+      return false;
+    }
+  };
+
   const handleAddPig = async () => {
     if (pigName.trim() === '' || tagNumber.trim() === '' || !gender || race.trim() === '') {
       Alert.alert('Validation Error', 'All fields are required.');
+      return;
+    }
+
+    const hasDuplicates = await checkForDuplicates();
+
+    if (hasDuplicates) {
+      Alert.alert('Duplicate Error', 'Pig Name or Tag Number already exists.');
       return;
     }
 
@@ -76,6 +104,13 @@ export default function AddPigInfoScreen({ route, navigation }) {
   const handleEditPig = async () => {
     if (pigName.trim() === '' || tagNumber.trim() === '' || !gender || race.trim() === '') {
       Alert.alert('Validation Error', 'All fields are required.');
+      return;
+    }
+
+    const hasDuplicates = await checkForDuplicates();
+
+    if (hasDuplicates) {
+      Alert.alert('Duplicate Error', 'Pig Name or Tag Number already exists.');
       return;
     }
 
