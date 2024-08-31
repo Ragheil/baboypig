@@ -11,7 +11,7 @@ import RegisterScreen from './components/authentication/RegisterScreen';
 import DashboardScreen from './components/DashboardScreen';
 import FarmNameScreen from './components/FarmNameScreen';
 import ContactScreen from './components/ContactScreen';
-import PigGroupsScreen from './components/pigGroup/PigGroupsScreen';
+import PigGroupsScreen from './components/PigGroupsScreen';
 
 import { auth, firestore } from './firebase/config2';
 

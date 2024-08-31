@@ -92,7 +92,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         <TouchableOpacity
           style={styles.seeAllButton}
           onPress={() => {
-            console.log("See All button pressed");
+         {/*   console.log("See All button pressed"); test */}
             navigation.navigate('PigGroups');
           }}
         >
