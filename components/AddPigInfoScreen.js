@@ -1,18 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, TouchableOpacity } from 'react-native';
-import { addDoc, collection, query, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { addDoc, collection, query, onSnapshot, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { firestore } from '../firebase/config2';
+import { Picker } from '@react-native-picker/picker';
 
 export default function AddPigInfoScreen({ route, navigation }) {
   const { pigGroupId } = route.params;
 
   const [pigName, setPigName] = useState('');
   const [tagNumber, setTagNumber] = useState('');
-  const [gender, setGender] = useState('');
+  const [gender, setGender] = useState('male'); // Default value set to 'male'
   const [race, setRace] = useState('');
   const [pigs, setPigs] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingPigId, setEditingPigId] = useState(null);
+  const [pigGroupName, setPigGroupName] = useState('');
+
+  useEffect(() => {
+    const fetchPigGroupName = async () => {
+      try {
+        const pigGroupDoc = await getDoc(doc(firestore, 'pigGroups', pigGroupId));
+        if (pigGroupDoc.exists()) {
+          setPigGroupName(pigGroupDoc.data().name || 'Unnamed Pig Group');
+        }
+      } catch (error) {
+        console.error('Error fetching pig group name:', error);
+      }
+    };
+
+    fetchPigGroupName();
+  }, [pigGroupId]);
 
   useEffect(() => {
     const q = query(collection(firestore, 'pigGroups', pigGroupId, 'pigs'));
@@ -57,7 +74,7 @@ export default function AddPigInfoScreen({ route, navigation }) {
 
       setPigName('');
       setTagNumber('');
-      setGender('');
+      setGender('male'); // Reset gender to default value
       setRace('');
     } catch (error) {
       console.error('Error saving pig information:', error);
@@ -75,13 +92,28 @@ export default function AddPigInfoScreen({ route, navigation }) {
   };
 
   const handleDeletePig = async (pigId) => {
-    try {
-      await deleteDoc(doc(firestore, 'pigGroups', pigGroupId, 'pigs', pigId));
-      Alert.alert('Success', 'Pig information deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting pig information:', error);
-      Alert.alert('Error', 'There was a problem deleting the pig information.');
-    }
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this pig information?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(firestore, 'pigGroups', pigGroupId, 'pigs', pigId));
+              Alert.alert('Success', 'Pig information deleted successfully!');
+            } catch (error) {
+              console.error('Error deleting pig information:', error);
+              Alert.alert('Error', 'There was a problem deleting the pig information.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderPig = ({ item }) => (
@@ -104,6 +136,7 @@ export default function AddPigInfoScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{isEditing ? 'Edit Pig Information' : 'Add Pig Information'}</Text>
+      <Text style={styles.groupName}>Pig Group: {pigGroupName}</Text>
       <TextInput
         style={styles.input}
         placeholder="Pig Name"
@@ -116,12 +149,17 @@ export default function AddPigInfoScreen({ route, navigation }) {
         value={tagNumber}
         onChangeText={setTagNumber}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Gender"
-        value={gender}
-        onChangeText={setGender}
-      />
+      <View style={styles.pickerContainer}>
+        <Text style={styles.pickerLabel}>Select Gender</Text>
+        <Picker
+          selectedValue={gender}
+          style={styles.picker}
+          onValueChange={(itemValue) => setGender(itemValue)}
+        >
+          <Picker.Item label="Male" value="male" />
+          <Picker.Item label="Female" value="female" />
+        </Picker>
+      </View>
       <TextInput
         style={styles.input}
         placeholder="Race"
@@ -157,6 +195,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
+  groupName: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
   subTitle: {
     fontSize: 20,
     marginTop: 30,
@@ -169,6 +213,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#ccc',
+    borderRadius: 5,
+  },
+  pickerContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  pickerLabel: {
+    fontSize: 16,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    borderColor: '#ccc',
+    borderWidth: 1,
     borderRadius: 5,
   },
   list: {
