@@ -1,30 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList } from 'react-native';
 import { addDoc, collection, query, onSnapshot, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { firestore } from '../firebase/config2';
 import { Picker } from '@react-native-picker/picker';
 
 export default function AddPigInfoScreen({ route, navigation }) {
   const { pigGroupId } = route.params;
-
   const [pigName, setPigName] = useState('');
   const [tagNumber, setTagNumber] = useState('');
-  const [gender, setGender] = useState('male'); // Default value set to 'male'
+  const [gender, setGender] = useState('male');
   const [race, setRace] = useState('');
   const [pigs, setPigs] = useState([]);
+  const [currentPigId, setCurrentPigId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingPigId, setEditingPigId] = useState(null);
   const [pigGroupName, setPigGroupName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchPigGroupName = async () => {
-      try {
-        const pigGroupDoc = await getDoc(doc(firestore, 'pigGroups', pigGroupId));
-        if (pigGroupDoc.exists()) {
-          setPigGroupName(pigGroupDoc.data().name || 'Unnamed Pig Group');
-        }
-      } catch (error) {
-        console.error('Error fetching pig group name:', error);
+      const docRef = doc(firestore, 'pigGroups', pigGroupId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        setPigGroupName(docSnap.data().name);
+      } else {
+        console.log('No such document!');
       }
     };
 
@@ -32,69 +32,77 @@ export default function AddPigInfoScreen({ route, navigation }) {
   }, [pigGroupId]);
 
   useEffect(() => {
-    const q = query(collection(firestore, 'pigGroups', pigGroupId, 'pigs'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const pigsData = [];
-      snapshot.forEach((doc) => {
-        pigsData.push({ id: doc.id, ...doc.data() });
+    const fetchPigs = async () => {
+      const q = query(collection(firestore, 'pigGroups', pigGroupId, 'pigs'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const pigsList = [];
+        snapshot.forEach((doc) => {
+          pigsList.push({ id: doc.id, ...doc.data() });
+        });
+        setPigs(pigsList);
       });
-      setPigs(pigsData);
-    });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    };
+
+    fetchPigs();
   }, [pigGroupId]);
 
-  const handleAddPigInfo = async () => {
-    if (!pigName || !tagNumber || !gender || !race) {
+  const handleAddPig = async () => {
+    if (pigName.trim() === '' || tagNumber.trim() === '' || !gender || race.trim() === '') {
       Alert.alert('Validation Error', 'All fields are required.');
       return;
     }
 
     try {
-      if (isEditing && editingPigId) {
-        await updateDoc(doc(firestore, 'pigGroups', pigGroupId, 'pigs', editingPigId), {
-          pigName,
-          tagNumber,
-          gender,
-          race,
-        });
-        Alert.alert('Success', 'Pig information updated successfully!');
-        setIsEditing(false);
-        setEditingPigId(null);
-      } else {
-        await addDoc(collection(firestore, 'pigGroups', pigGroupId, 'pigs'), {
-          pigName,
-          tagNumber,
-          gender,
-          race,
-          createdAt: new Date(),
-        });
-        Alert.alert('Success', 'Pig information added successfully!');
-      }
-
+      await addDoc(collection(firestore, 'pigGroups', pigGroupId, 'pigs'), {
+        pigName,
+        tagNumber,
+        gender,
+        race,
+        createdAt: new Date(),
+      });
+      Alert.alert('Success', 'Pig added successfully!');
       setPigName('');
       setTagNumber('');
-      setGender('male'); // Reset gender to default value
+      setGender('male');
       setRace('');
     } catch (error) {
-      console.error('Error saving pig information:', error);
-      Alert.alert('Error', 'There was a problem saving the pig information.');
+      console.error('Error adding pig:', error);
+      Alert.alert('Error', 'There was a problem adding the pig.');
     }
   };
 
-  const handleEditPig = (pig) => {
-    setPigName(pig.pigName);
-    setTagNumber(pig.tagNumber);
-    setGender(pig.gender);
-    setRace(pig.race);
-    setIsEditing(true);
-    setEditingPigId(pig.id);
+  const handleEditPig = async () => {
+    if (pigName.trim() === '' || tagNumber.trim() === '' || !gender || race.trim() === '') {
+      Alert.alert('Validation Error', 'All fields are required.');
+      return;
+    }
+
+    try {
+      await updateDoc(doc(firestore, 'pigGroups', pigGroupId, 'pigs', currentPigId), {
+        pigName,
+        tagNumber,
+        gender,
+        race,
+      });
+      Alert.alert('Success', 'Pig updated successfully!');
+      setIsEditing(false);
+      setPigName('');
+      setTagNumber('');
+      setGender('male');
+      setRace('');
+      setCurrentPigId(null);
+    } catch (error) {
+      console.error('Error updating pig:', error);
+      Alert.alert('Error', 'There was a problem updating the pig.');
+    }
   };
 
-  const handleDeletePig = async (pigId) => {
+  const handleDeletePig = (pigId) => {
     Alert.alert(
-      'Confirm Delete',
-      'Are you sure you want to delete this pig information?',
+      'Confirm Deletion',
+      'Are you sure you want to delete this pig?',
       [
         {
           text: 'Cancel',
@@ -102,41 +110,49 @@ export default function AddPigInfoScreen({ route, navigation }) {
         },
         {
           text: 'Delete',
+          style: 'destructive',
           onPress: async () => {
             try {
               await deleteDoc(doc(firestore, 'pigGroups', pigGroupId, 'pigs', pigId));
-              Alert.alert('Success', 'Pig information deleted successfully!');
+              Alert.alert('Success', 'Pig deleted successfully!');
             } catch (error) {
-              console.error('Error deleting pig information:', error);
-              Alert.alert('Error', 'There was a problem deleting the pig information.');
+              console.error('Error deleting pig:', error);
+              Alert.alert('Error', 'There was a problem deleting the pig.');
             }
           },
         },
-      ]
+      ],
+      { cancelable: true }
     );
   };
 
+  const filteredPigs = pigs.filter(pig =>
+    pig.pigName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const renderPig = ({ item }) => (
     <View style={styles.pigBox}>
-      <Text style={styles.pigText}>Name: {item.pigName}</Text>
+      <Text style={styles.pigText}>{item.pigName}</Text>
       <Text style={styles.pigText}>Tag Number: {item.tagNumber}</Text>
       <Text style={styles.pigText}>Gender: {item.gender}</Text>
       <Text style={styles.pigText}>Race: {item.race}</Text>
-      <View style={styles.actions}>
-        <TouchableOpacity onPress={() => handleEditPig(item)} style={styles.actionButton}>
-          <Text style={styles.editText}>Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDeletePig(item.id)} style={styles.actionButton}>
-          <Text style={styles.deleteText}>Delete</Text>
-        </TouchableOpacity>
+      <View style={styles.actionsContainer}>
+        <Button title="Edit" onPress={() => {
+          setPigName(item.pigName);
+          setTagNumber(item.tagNumber);
+          setGender(item.gender);
+          setRace(item.race);
+          setCurrentPigId(item.id);
+          setIsEditing(true);
+        }} />
+        <Button title="Delete" color="red" onPress={() => handleDeletePig(item.id)} />
       </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{isEditing ? 'Edit Pig Information' : 'Add Pig Information'}</Text>
-      <Text style={styles.groupName}>Pig Group: {pigGroupName}</Text>
+      <Text style={styles.title}>Pig Group Informations</Text>
       <TextInput
         style={styles.input}
         placeholder="Pig Name"
@@ -149,37 +165,38 @@ export default function AddPigInfoScreen({ route, navigation }) {
         value={tagNumber}
         onChangeText={setTagNumber}
       />
-      <View style={styles.pickerContainer}>
-        <Text style={styles.pickerLabel}>Select Gender</Text>
-        <Picker
-          selectedValue={gender}
-          style={styles.picker}
-          onValueChange={(itemValue) => setGender(itemValue)}
-        >
-          <Picker.Item label="Male" value="male" />
-          <Picker.Item label="Female" value="female" />
-        </Picker>
-      </View>
+      <Picker
+        selectedValue={gender}
+        style={styles.picker}
+        onValueChange={(itemValue) => setGender(itemValue)}
+      >
+        <Picker.Item label="Male" value="male" />
+        <Picker.Item label="Female" value="female" />
+      </Picker>
       <TextInput
         style={styles.input}
         placeholder="Race"
         value={race}
         onChangeText={setRace}
       />
-      <Button title={isEditing ? 'Update Pig Info' : 'Add Pig Info'} onPress={handleAddPigInfo} />
-
-      <Text style={styles.subTitle}>Pigs in this Group</Text>
-      {pigs.length > 0 ? (
-        <FlatList
-          data={pigs}
-          renderItem={renderPig}
-          keyExtractor={(item) => item.id}
-          style={styles.list}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
-      ) : (
-        <Text style={styles.noPigsText}>No pigs added yet.</Text>
-      )}
+      <Button
+        title={isEditing ? "Update Pig" : "Add Pig"}
+        onPress={isEditing ? handleEditPig : handleAddPig}
+      />
+      <Text style={styles.title}>Pig Group: {pigGroupName}</Text>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search pigs"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+      <FlatList
+        data={filteredPigs}
+        renderItem={renderPig}
+        keyExtractor={(item) => item.id}
+        style={styles.list}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
     </View>
   );
 }
@@ -195,18 +212,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  groupName: {
-    fontSize: 18,
-    marginBottom: 20,
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  subTitle: {
-    fontSize: 20,
-    marginTop: 30,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
   input: {
     width: '100%',
     padding: 10,
@@ -215,20 +220,17 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 5,
   },
-  pickerContainer: {
+  picker: {
     width: '100%',
+    height: 50,
     marginBottom: 20,
   },
-  pickerLabel: {
-    fontSize: 16,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  picker: {
-    height: 50,
+  searchInput: {
     width: '100%',
-    borderColor: '#ccc',
+    padding: 10,
+    marginBottom: 20,
     borderWidth: 1,
+    borderColor: '#ccc',
     borderRadius: 5,
   },
   list: {
@@ -244,25 +246,9 @@ const styles = StyleSheet.create({
   pigText: {
     fontSize: 16,
   },
-  actions: {
+  actionsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 10,
-  },
-  actionButton: {
-    marginRight: 15,
-  },
-  editText: {
-    color: 'blue',
-    fontWeight: 'bold',
-  },
-  deleteText: {
-    color: 'red',
-    fontWeight: 'bold',
-  },
-  noPigsText: {
-    textAlign: 'center',
-    fontSize: 18,
-    color: '#aaa',
-    marginTop: 20,
   },
 });

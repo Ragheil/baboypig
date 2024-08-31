@@ -5,6 +5,7 @@ import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWith
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { StyleSheet } from 'react-native';
 
+// Import screens
 import WelcomeScreen from './components/WelcomeScreen';
 import LoginScreen from './components/authentication/LoginScreen';
 import RegisterScreen from './components/authentication/RegisterScreen';
@@ -12,7 +13,7 @@ import DashboardScreen from './components/DashboardScreen';
 import FarmNameScreen from './components/FarmNameScreen';
 import ContactScreen from './components/ContactScreen';
 import PigGroupsScreen from './components/PigGroupsScreen';
-import AddPigInfoScreen from './components/AddPigInfoScreen'; // Import the new AddPigInfoScreen
+import AddPigInfoScreen from './components/AddPigInfoScreen'; // Import AddPigInfoScreen
 
 import { auth, firestore } from './firebase/config2';
 
@@ -102,12 +103,29 @@ export default function App() {
           </Stack.Screen>
         ) : user ? (
           isFarmNameSet ? (
-            <Stack.Screen
-              name="Dashboard"
-              options={{ headerShown: false }}
-            >
-              {(props) => <DashboardScreen {...props} firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />}
-            </Stack.Screen>
+            <>
+              <Stack.Screen
+                name="Dashboard"
+                options={{ headerShown: false }}
+              >
+                {(props) => <DashboardScreen {...props} firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />}
+              </Stack.Screen>
+              <Stack.Screen
+                name="PigGroups"
+                component={PigGroupsScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="AddPigInfoScreen"
+                component={AddPigInfoScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ContactScreen"
+                component={ContactScreen}
+                options={{ headerShown: false }}
+              />
+            </>
           ) : (
             <Stack.Screen
               name="FarmName"
@@ -151,21 +169,6 @@ export default function App() {
             )}
           </Stack.Screen>
         )}
-        <Stack.Screen
-          name="ContactScreen"
-          component={ContactScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="PigGroups"
-          component={PigGroupsScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AddPigInfo"
-          component={AddPigInfoScreen}
-          options={{ headerShown: false }}
-        />
       </Stack.Navigator>
     </NavigationContainer>
   );
