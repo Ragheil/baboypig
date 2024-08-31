@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, FlatList, TouchableOpacity, Alert, Modal } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { auth, firestore } from '../firebase/config2'; // Adjust the path as needed
+import Modal from 'react-native-modal'; // Ensure this import is present for the modal library
 
 const PigGroupsScreen = ({ navigation }) => {
   const [pigGroups, setPigGroups] = useState([]);
   const [filteredPigGroups, setFilteredPigGroups] = useState([]);
   const [name, setName] = useState('');
   const [editPigGroupId, setEditPigGroupId] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [isAddEditModalVisible, setIsAddEditModalVisible] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPigGroupName, setCurrentPigGroupName] = useState('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const user = auth.currentUser;
 
   useEffect(() => {
@@ -42,7 +46,7 @@ const PigGroupsScreen = ({ navigation }) => {
   };
 
   const addOrUpdatePigGroup = async () => {
-    if (!name) {
+    if (!name.trim()) {
       Alert.alert('Validation Error', 'Name is required!');
       return;
     }
@@ -62,29 +66,30 @@ const PigGroupsScreen = ({ navigation }) => {
       }
 
       setName('');
-      setModalVisible(false); // Close the modal after saving
+      setIsAddEditModalVisible(false); // Close the modal after saving
       fetchPigGroups(); // Refresh the pig group list
     } catch (error) {
       console.error('Error adding/updating pig group:', error);
     }
   };
 
-  const confirmDeletePigGroup = (pigGroupId) => {
-    Alert.alert(
-      'Confirm Deletion',
-      'Are you sure you want to delete this pig group?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', onPress: () => deletePigGroup(pigGroupId) },
-      ],
-      { cancelable: false }
-    );
+  const confirmDeletePigGroup = (pigGroup) => {
+    setCurrentPigGroupName(pigGroup.name);
+    setEditPigGroupId(pigGroup.id);
+    setIsDeleteModalVisible(true);
   };
 
-  const deletePigGroup = async (pigGroupId) => {
+  const deletePigGroup = async () => {
+    if (deleteConfirmation !== currentPigGroupName) {
+      Alert.alert('Validation Error', 'Pig group name does not match.');
+      return;
+    }
+
     try {
       if (!user) return;
-      await deleteDoc(doc(firestore, `users/${user.uid}/pigGroups`, pigGroupId));
+      await deleteDoc(doc(firestore, `users/${user.uid}/pigGroups`, editPigGroupId));
+      setIsDeleteModalVisible(false); // Close the modal after deletion
+      setDeleteConfirmation('');
       fetchPigGroups(); // Refresh the pig group list
     } catch (error) {
       console.error('Error deleting pig group:', error);
@@ -94,26 +99,28 @@ const PigGroupsScreen = ({ navigation }) => {
   const startEditPigGroup = (pigGroup) => {
     setName(pigGroup.name);
     setEditPigGroupId(pigGroup.id);
-    setModalVisible(true); // Open the modal for editing
+    setIsAddEditModalVisible(true); // Open the modal for editing
   };
 
   const openAddPigGroupModal = () => {
     setName('');
     setEditPigGroupId(null);
-    setModalVisible(true); // Open the modal for adding
+    setIsAddEditModalVisible(true); // Open the modal for adding
   };
 
   const closeModal = () => {
-    setModalVisible(false);
+    setIsAddEditModalVisible(false);
+    setIsDeleteModalVisible(false);
   };
 
   const handlePigGroupClick = (pigGroup) => {
-    // Navigate to the PigGroupDetailsScreen or perform any other action
     navigation.navigate('AddPigInfoScreen', { pigGroupId: pigGroup.id });
   };
 
   return (
     <View style={styles.container}>
+    <Text style={styles.title}>Pig Information</Text>
+
       <TextInput
         style={styles.searchInput}
         placeholder="Search by name"
@@ -135,7 +142,7 @@ const PigGroupsScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => startEditPigGroup(item)}>
                   <Text style={styles.actionText}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => confirmDeletePigGroup(item.id)}>
+                <TouchableOpacity onPress={() => confirmDeletePigGroup(item)}>
                   <Text style={styles.actionText}>Delete</Text>
                 </TouchableOpacity>
               </View>
@@ -144,26 +151,36 @@ const PigGroupsScreen = ({ navigation }) => {
         )}
       />
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalView}>
-            <Text style={styles.header}>{editPigGroupId ? 'Edit Pig Group' : 'Add New Pig Group'}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Name"
-              value={name}
-              onChangeText={setName}
-            />
-            <View style={styles.buttonContainer}>
-              <Button title="Save" onPress={addOrUpdatePigGroup} color="#4CAF50" />
-              <Button title="Cancel" onPress={closeModal} color="#F44336" />
-            </View>
-          </View>
+      {/* Modal for adding or editing pig group */}
+      <Modal isVisible={isAddEditModalVisible} onBackdropPress={closeModal}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>{editPigGroupId ? 'Edit Pig Group' : 'Add Pig Group'}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Pig Group Name"
+            value={name}
+            onChangeText={setName}
+          />
+          <Button title="Save" onPress={addOrUpdatePigGroup} color="#4CAF50" />
+          <Button title="Cancel" onPress={closeModal} color="#F44336" />
+        </View>
+      </Modal>
+
+      {/* Modal for delete confirmation */}
+      <Modal isVisible={isDeleteModalVisible} onBackdropPress={closeModal}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Confirm Deletion</Text>
+          <Text style={styles.warningText}>
+            <Text style={styles.boldText}>Warning:</Text> Deleting this group will remove all pig information within it. Are you sure you want to delete the group "{currentPigGroupName}"?
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Type the pig group name to confirm"
+            value={deleteConfirmation}
+            onChangeText={setDeleteConfirmation}
+          />
+          <Button title="Delete" onPress={deletePigGroup} color="#F44336" />
+          <Button title="Cancel" onPress={closeModal} color="#4CAF50" />
         </View>
       </Modal>
     </View>
@@ -208,28 +225,22 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontWeight: 'bold',
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalView: {
-    width: '80%',
-    backgroundColor: 'white',
-    borderRadius: 10,
+  modalContent: {
+    backgroundColor: '#fff',
     padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
+    borderRadius: 10,
   },
-  header: {
+  modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
     marginBottom: 10,
+    textAlign: 'center',
+  },
+  warningText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  boldText: {
+    fontWeight: 'bold',
   },
   input: {
     width: '100%',
@@ -239,10 +250,11 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 5,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    marginTop: 35,
   },
 });
 
