@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
-    marginTop: 35,
+    marginTop: 60,
   },
   groupName: {
     fontSize: 18,

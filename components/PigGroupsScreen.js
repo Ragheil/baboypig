@@ -240,6 +240,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 10,
     textAlign: 'center',
+    fontWeight: 'bold'
   },
   warningText: {
     fontSize: 16,
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    marginTop: 35,
+    marginTop: 60,
   },
 });
 

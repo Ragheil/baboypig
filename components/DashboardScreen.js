@@ -167,6 +167,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    marginTop: 60,
     textAlign: 'center',
   },
   pigGroupSummary: {
@@ -246,6 +247,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    marginTop: 60,
+
   },
   sidebarDivider: {
     backgroundColor: '#869F77',
