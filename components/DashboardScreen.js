@@ -14,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, onSnapshot, limit } from 'firebase/firestore';
+import { collection, query, onSnapshot } from 'firebase/firestore';
 import { firestore } from '../firebase/config2';
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
@@ -24,7 +24,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
   const navigation = useNavigation();
 
   useEffect(() => {
-    const q = query(collection(firestore, 'pigGroups'), limit(3));
+    const q = query(collection(firestore, 'pigGroups'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const groups = [];
       snapshot.forEach((doc) => {
@@ -69,35 +69,42 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <LinearGradient
         colors={['#FDE9EA', '#869F77', '#588061']}
         style={styles.gradient}
       >
-        <View style={styles.container}>
+        <View style={styles.contentContainer}>
           <Text style={styles.title}>Pig Groups Summary</Text>
+
+          {/* See All Button */}
+          <TouchableOpacity
+            style={styles.seeAllButton}
+            onPress={() => {
+              navigation.navigate('PigGroups');
+            }}
+          >
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
+
           <FlatList
             data={pigGroups}
             renderItem={({ item }) => (
-              <View style={styles.pigGroupSummary}>
+              <View style={[styles.pigGroupSummary, { width: 150 }]}>
                 <Text style={styles.pigGroupText}>{item.name}</Text>
               </View>
             )}
             keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.flatListContent}
+            snapToAlignment="center"
+            snapToInterval={160} // Ensure this matches the item width + margin
+            decelerationRate="fast"
             ListEmptyComponent={<Text>No pig groups available.</Text>}
+            style={styles.flatList} // Ensure FlatList does not expand vertically
           />
         </View>
-
-        {/* See All Button - moved outside FlatList for better responsiveness */}
-        <TouchableOpacity
-          style={styles.seeAllButton}
-          onPress={() => {
-         {/*   console.log("See All button pressed"); test */}
-            navigation.navigate('PigGroups');
-          }}
-        >
-          <Text style={styles.seeAllText}>See All</Text>
-        </TouchableOpacity>
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -132,7 +139,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         </TouchableWithoutFeedback>
         <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarTranslateX }] }]}>
           <Text style={styles.sidebarHeader}>{firstName} {lastName}</Text>
-          <Divider style={{ backgroundColor: '#869F77', height: 1, marginBottom: 20 }} />
+          <Divider style={styles.sidebarDivider} />
           <Text style={styles.sidebarText}>Farm: {farmName}</Text>
           <TouchableOpacity style={styles.sidebarButton} onPress={confirmLogout}>
             <Text style={styles.sidebarButtonText}>Logout</Text>
@@ -144,12 +151,14 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   gradient: {
     flex: 1,
   },
-  container: {
+  contentContainer: {
     flex: 1,
-    justifyContent: 'center',
     padding: 16,
   },
   title: {
@@ -161,25 +170,33 @@ const styles = StyleSheet.create({
   pigGroupSummary: {
     padding: 15,
     marginVertical: 10,
+    marginRight: 10,
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     alignItems: 'center',
+    flexDirection: 'row',
   },
   pigGroupText: {
     fontSize: 18,
     color: '#333',
   },
+  flatListContent: {
+    paddingHorizontal: 10,
+  },
+  flatList: {
+    flexGrow: 0, // Ensure FlatList does not expand vertically
+  },
   seeAllButton: {
-    marginTop: 20,
+    marginBottom: 20, // Adjust spacing between the button and FlatList
     paddingVertical: 10,
     paddingHorizontal: 20,
     backgroundColor: '#869F77',
     borderRadius: 5,
     alignItems: 'center',
-    zIndex: 10,  // Ensures button is on top
-    elevation: 5, // Adds elevation on Android
+    zIndex: 10,
+    elevation: 5,
   },
   seeAllText: {
     color: '#fff',
@@ -190,7 +207,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: 15,
     backgroundColor: '#fff',
-    zIndex: 3, // Ensures footer is on top
+    zIndex: 3,
   },
   footerItem: {
     alignItems: 'center',
@@ -226,6 +243,11 @@ const styles = StyleSheet.create({
   sidebarHeader: {
     fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  sidebarDivider: {
+    backgroundColor: '#869F77',
+    height: 1,
     marginBottom: 20,
   },
   sidebarText: {
