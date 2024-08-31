@@ -187,7 +187,7 @@ export default function AddPigInfoScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Pig Group Informations</Text>
+      <Text style={styles.title}>Pig Informations</Text>
       <TextInput
         style={styles.input}
         placeholder="Pig Name"
@@ -245,6 +245,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     marginBottom: 20,
+    marginTop: 20,
     textAlign: 'center',
   },
   input: {
@@ -263,7 +264,6 @@ const styles = StyleSheet.create({
   searchInput: {
     width: '100%',
     padding: 10,
-    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,

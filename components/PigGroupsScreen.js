@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, TouchableOpacity } from 'react-native';
-import { addDoc, collection, query, onSnapshot, deleteDoc, doc, updateDoc, where, getDocs } from 'firebase/firestore';
+import { addDoc, collection, query, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { firestore } from '../firebase/config2';
 import { useNavigation } from '@react-navigation/native';
 import Modal from 'react-native-modal';
@@ -17,6 +17,27 @@ export default function PigGroupsScreen() {
   const [newName, setNewName] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const navigation = useNavigation();
+
+  // Function to add a new pig group to Firestore
+  const handleAddPigGroup = async () => {
+    if (pigGroupName.trim() === '') {
+      Alert.alert('Validation Error', 'Pig group name cannot be empty.');
+      return;
+    }
+
+    try {
+      await addDoc(collection(firestore, 'pigGroups'), {
+        name: pigGroupName,
+        createdAt: new Date(),
+      });
+      Alert.alert('Success', 'Pig group added successfully!');
+      setPigGroupName('');
+      setIsAddModalVisible(false);
+    } catch (error) {
+      console.error('Error adding pig group:', error);
+      Alert.alert('Error', 'There was a problem adding the pig group.');
+    }
+  };
 
   // Fetch pig groups from Firestore
   useEffect(() => {
@@ -37,67 +58,6 @@ export default function PigGroupsScreen() {
     group.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Check if a pig group name exists
-  const checkPigGroupNameExists = async (name, excludeId = null) => {
-    const q = query(collection(firestore, 'pigGroups'), where('name', '==', name));
-    if (excludeId) {
-      q = query(q, where('id', '!=', excludeId));
-    }
-    const querySnapshot = await getDocs(q);
-    return !querySnapshot.empty;
-  };
-
-  // Function to add a new pig group to Firestore
-  const handleAddPigGroup = async () => {
-    if (pigGroupName.trim() === '') {
-      Alert.alert('Validation Error', 'Pig group name cannot be empty.');
-      return;
-    }
-
-    if (await checkPigGroupNameExists(pigGroupName)) {
-      Alert.alert('Validation Error', 'Pig group name already exists.');
-      return;
-    }
-
-    try {
-      await addDoc(collection(firestore, 'pigGroups'), {
-        name: pigGroupName,
-        createdAt: new Date(),
-      });
-      Alert.alert('Success', 'Pig group added successfully!');
-      setPigGroupName('');
-      setIsAddModalVisible(false);
-    } catch (error) {
-      console.error('Error adding pig group:', error);
-      Alert.alert('Error', 'There was a problem adding the pig group.');
-    }
-  };
-
-  // Function to handle updating a pig group
-  const handleUpdatePigGroup = async () => {
-    if (newName.trim() === '') {
-      Alert.alert('Validation Error', 'Pig group name cannot be empty.');
-      return;
-    }
-
-    if (await checkPigGroupNameExists(newName, currentPigGroupId)) {
-      Alert.alert('Validation Error', 'Pig group name already exists.');
-      return;
-    }
-
-    try {
-      await updateDoc(doc(firestore, 'pigGroups', currentPigGroupId), {
-        name: newName,
-      });
-      Alert.alert('Success', 'Pig group updated successfully!');
-      setIsEditModalVisible(false);
-      setNewName('');
-    } catch (error) {
-      console.error('Error updating pig group:', error);
-      Alert.alert('Error', 'There was a problem updating the pig group.');
-    }
-  };
-
   // Function to handle deleting a pig group
   const handleDeletePigGroup = async () => {
     if (deleteConfirmation === currentPigGroupName) {
@@ -112,6 +72,26 @@ export default function PigGroupsScreen() {
       }
     } else {
       Alert.alert('Validation Error', 'Pig group name does not match.');
+    }
+  };
+
+  // Function to handle updating a pig group
+  const handleUpdatePigGroup = async () => {
+    if (newName.trim() === '') {
+      Alert.alert('Validation Error', 'Pig group name cannot be empty.');
+      return;
+    }
+
+    try {
+      await updateDoc(doc(firestore, 'pigGroups', currentPigGroupId), {
+        name: newName,
+      });
+      Alert.alert('Success', 'Pig group updated successfully!');
+      setIsEditModalVisible(false);
+      setNewName('');
+    } catch (error) {
+      console.error('Error updating pig group:', error);
+      Alert.alert('Error', 'There was a problem updating the pig group.');
     }
   };
 
@@ -138,6 +118,8 @@ export default function PigGroupsScreen() {
 
   return (
     <View style={styles.container}>
+    <Text style={styles.title}>Pig Group Informations</Text>
+
       <Button title="Add Pig Group" onPress={() => setIsAddModalVisible(true)} />
 
       <TextInput
@@ -262,5 +244,11 @@ const styles = StyleSheet.create({
   },
   boldText: {
     fontWeight: 'bold',
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+    marginTop: 20,
+    textAlign: 'center',
   },
 });
