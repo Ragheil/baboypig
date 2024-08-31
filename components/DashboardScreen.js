@@ -77,15 +77,17 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         <View style={styles.contentContainer}>
           <Text style={styles.title}>Pig Groups Summary</Text>
 
-          {/* See All Button */}
-          <TouchableOpacity
-            style={styles.seeAllButton}
-            onPress={() => {
-              navigation.navigate('PigGroups');
-            }}
-          >
-            <Text style={styles.seeAllText}>See All</Text>
-          </TouchableOpacity>
+          {/* Conditionally Render the See All Button */}
+          {!sidebarVisible && (
+            <TouchableOpacity
+              style={styles.seeAllButton}
+              onPress={() => {
+                navigation.navigate('PigGroups');
+              }}
+            >
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          )}
 
           <FlatList
             data={pigGroups}
