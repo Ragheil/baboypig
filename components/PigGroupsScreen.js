@@ -19,6 +19,8 @@ const PigGroupsScreen = ({ navigation }) => {
   useEffect(() => {
     if (user) {
       fetchPigGroups();
+      const interval = setInterval(fetchPigGroups, 1000); // Fetch every second
+      return () => clearInterval(interval); // Cleanup on unmount
     }
   }, [user]);
 
@@ -35,10 +37,20 @@ const PigGroupsScreen = ({ navigation }) => {
       const userPigGroupsCollection = collection(firestore, `users/${user.uid}/pigGroups`);
       const q = query(userPigGroupsCollection, orderBy('name'));
       const querySnapshot = await getDocs(q);
-      const pigGroupsList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
+      
+      const pigGroupsList = await Promise.all(querySnapshot.docs.map(async doc => {
+        const pigGroupId = doc.id;
+        const pigsCollection = collection(firestore, `users/${user.uid}/pigGroups/${pigGroupId}/pigs`);
+        const pigsSnapshot = await getDocs(pigsCollection);
+        const pigCount = pigsSnapshot.size;
+
+        return {
+          id: pigGroupId,
+          ...doc.data(),
+          pigCount: pigCount, // Add the pig count to the group data
+        };
       }));
+
       setPigGroups(pigGroupsList);
     } catch (error) {
       console.error('Error fetching pig groups:', error);
@@ -58,16 +70,17 @@ const PigGroupsScreen = ({ navigation }) => {
         await updateDoc(doc(firestore, `users/${user.uid}/pigGroups`, editPigGroupId), {
           name,
         });
+        console.log('Pig group updated:', name); // Log update
         setEditPigGroupId(null); // Reset edit mode
       } else {
         await addDoc(collection(firestore, `users/${user.uid}/pigGroups`), {
           name,
         });
+        console.log('Pig group added:', name); // Log addition
       }
 
       setName('');
       setIsAddEditModalVisible(false); // Close the modal after saving
-      fetchPigGroups(); // Refresh the pig group list
     } catch (error) {
       console.error('Error adding/updating pig group:', error);
     }
@@ -88,9 +101,9 @@ const PigGroupsScreen = ({ navigation }) => {
     try {
       if (!user) return;
       await deleteDoc(doc(firestore, `users/${user.uid}/pigGroups`, editPigGroupId));
+      console.log('Pig group deleted:', currentPigGroupName); // Log deletion
       setIsDeleteModalVisible(false); // Close the modal after deletion
       setDeleteConfirmation('');
-      fetchPigGroups(); // Refresh the pig group list
     } catch (error) {
       console.error('Error deleting pig group:', error);
     }
@@ -138,8 +151,12 @@ const PigGroupsScreen = ({ navigation }) => {
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handlePigGroupClick(item)}>
             <View style={styles.pigGroupItem}>
-              <Text style={styles.pigGroupText}>Name: {item.name}</Text>
+              {/* Display the pig group name and pig count in bold */}
+              <Text style={styles.pigGroupText}>
+                {item.name} <Text style={styles.boldText}>{item.pigCount} pigs</Text>
+              </Text>
               <View style={styles.actions}>
+                {/* Wrap "Edit" and "Delete" text within <Text> components */}
                 <TouchableOpacity onPress={() => startEditPigGroup(item)}>
                   <Text style={styles.actionText}>Edit</Text>
                 </TouchableOpacity>
@@ -167,16 +184,14 @@ const PigGroupsScreen = ({ navigation }) => {
         </View>
       </Modal>
 
-      {/* Modal for delete confirmation */}
+      {/* Modal for confirming deletion */}
       <Modal isVisible={isDeleteModalVisible} onBackdropPress={closeModal}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Confirm Deletion</Text>
-          <Text style={styles.warningText}>
-            <Text style={styles.boldText}>Warning:</Text> Deleting this group will remove all pig information within it. Are you sure you want to delete the group "{currentPigGroupName}"?
-          </Text>
+          <Text>Type the pig group name <Text style={styles.boldText}>{currentPigGroupName}</Text> to confirm:</Text>
           <TextInput
             style={styles.input}
-            placeholder="Type the pig group name to confirm"
+            placeholder="Enter Pig Group Name"
             value={deleteConfirmation}
             onChangeText={setDeleteConfirmation}
           />
@@ -192,19 +207,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#FFF',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    marginTop: 60,
+
   },
   searchAndAddContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   searchInput: {
-    flex: 1,
-    padding: 10,
+    borderColor: '#CCC',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    padding: 8,
+    borderRadius: 4,
+    flex: 1,
     marginLeft: 10,
   },
   tableHeader: {
@@ -213,55 +236,45 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   pigGroupItem: {
-    padding: 15,
-    backgroundColor: '#fff',
+    padding: 10,
+    backgroundColor: '#F9F9F9',
+    borderBottomColor: '#EEE',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
-    borderRadius: 5,
-    elevation: 2,
+
   },
   pigGroupText: {
-    fontSize: 16,
+    fontSize: 30,
+  },
+  boldText: {
+    fontWeight: 'bold',
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
   },
   actionText: {
-    color: '#4CAF50',
-    fontWeight: 'bold',
+    marginLeft: 10,
+    color: '#007BFF',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF',
     padding: 20,
     borderRadius: 10,
   },
   modalTitle: {
     fontSize: 18,
-    marginBottom: 10,
-    textAlign: 'center',
-    fontWeight: 'bold'
-  },
-  warningText: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  boldText: {
     fontWeight: 'bold',
+    marginBottom: 10,
   },
   input: {
-    width: '100%',
-    padding: 10,
-    marginBottom: 20,
+    borderColor: '#CCC',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    marginTop: 60,
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 10,
   },
 });
 
