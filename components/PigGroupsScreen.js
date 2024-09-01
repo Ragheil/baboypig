@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { auth, firestore } from '../firebase/config2'; // Adjust the path as needed
 import Modal from 'react-native-modal'; // Ensure this import is present for the modal library
@@ -130,9 +130,36 @@ const PigGroupsScreen = ({ navigation }) => {
     navigation.navigate('AddPigInfoScreen', { pigGroupId: pigGroup.id });
   };
 
+  const renderPigGroups = () => {
+    const rows = [];
+    for (let i = 0; i < filteredPigGroups.length; i += 3) {
+      rows.push(filteredPigGroups.slice(i, i + 3));
+    }
+
+    return rows.map((row, index) => (
+      <View key={index} style={styles.row}>
+        {row.map(pigGroup => (
+          <TouchableOpacity key={pigGroup.id} onPress={() => handlePigGroupClick(pigGroup)} style={styles.pigGroupItem}>
+            <Text style={styles.pigGroupText}>
+              {pigGroup.name} <Text style={styles.boldText}>{pigGroup.pigCount} {/* pigs Pig count name here */} </Text> 
+            </Text>
+            <View style={styles.actions}>
+              <TouchableOpacity onPress={() => startEditPigGroup(pigGroup)}>
+                <Text style={styles.actionText}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => confirmDeletePigGroup(pigGroup)}>
+                <Text style={styles.actionText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    ));
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Pig Information</Text>
+      <Text style={styles.title}>Pig Group</Text>
 
       <View style={styles.searchAndAddContainer}>
         <Button title="Add Pig Group" onPress={openAddPigGroupModal} color="#4CAF50" />
@@ -145,29 +172,9 @@ const PigGroupsScreen = ({ navigation }) => {
       </View>
 
       <Text style={styles.tableHeader}>Pig Groups</Text>
-      <FlatList
-        data={filteredPigGroups}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handlePigGroupClick(item)}>
-            <View style={styles.pigGroupItem}>
-              {/* Display the pig group name and pig count in bold */}
-              <Text style={styles.pigGroupText}>
-                {item.name} <Text style={styles.boldText}>{item.pigCount} pigs</Text>
-              </Text>
-              <View style={styles.actions}>
-                {/* Wrap "Edit" and "Delete" text within <Text> components */}
-                <TouchableOpacity onPress={() => startEditPigGroup(item)}>
-                  <Text style={styles.actionText}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => confirmDeletePigGroup(item)}>
-                  <Text style={styles.actionText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+      <ScrollView>
+        {renderPigGroups()}
+      </ScrollView>
 
       {/* Modal for adding or editing pig group */}
       <Modal isVisible={isAddEditModalVisible} onBackdropPress={closeModal}>
@@ -185,20 +192,27 @@ const PigGroupsScreen = ({ navigation }) => {
       </Modal>
 
       {/* Modal for confirming deletion */}
-      <Modal isVisible={isDeleteModalVisible} onBackdropPress={closeModal}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Confirm Deletion</Text>
-          <Text>Type the pig group name <Text style={styles.boldText}>{currentPigGroupName}</Text> to confirm:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Pig Group Name"
-            value={deleteConfirmation}
-            onChangeText={setDeleteConfirmation}
-          />
-          <Button title="Delete" onPress={deletePigGroup} color="#F44336" />
-          <Button title="Cancel" onPress={closeModal} color="#4CAF50" />
-        </View>
-      </Modal>
+{/* Modal for confirming deletion */}
+<Modal isVisible={isDeleteModalVisible} onBackdropPress={closeModal}>
+  <View style={styles.modalContent}>
+    <Text style={styles.modalTitle}>Confirm Deletion</Text>
+    <Text>
+      <Text style={styles.boldText}>Warning:</Text> Deleting this group will remove all the 
+      <Text style={styles.boldText}> Pig Information</Text> within it. Are you sure you want to 
+      delete this group? Type "<Text style={styles.boldText}>{currentPigGroupName}</Text>" 
+      to confirm:
+    </Text>
+    <TextInput
+      style={styles.input}
+      placeholder="Enter Pig Group Name"
+      value={deleteConfirmation}
+      onChangeText={setDeleteConfirmation}
+    />
+    <Button title="Delete" onPress={deletePigGroup} color="#F44336" />
+    <Button title="Cancel" onPress={closeModal} color="#4CAF50" />
+  </View>
+</Modal>
+
     </View>
   );
 };
@@ -214,7 +228,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     marginTop: 60,
-
   },
   searchAndAddContainer: {
     flexDirection: 'row',
@@ -235,29 +248,34 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  pigGroupItem: {
-    padding: 10,
-    backgroundColor: '#F9F9F9',
-    borderBottomColor: '#EEE',
-    borderBottomWidth: 1,
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 10,
-
+  },
+  pigGroupItem: {
+    flex: 1,
+    padding: 10,
+    marginRight: 10,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 5,
+    borderColor: '#CCC',
+    borderWidth: 1,
   },
   pigGroupText: {
-    fontSize: 30,
+    fontSize: 16,
+    marginBottom: 10,
   },
   boldText: {
     fontWeight: 'bold',
   },
   actions: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   actionText: {
-    marginLeft: 10,
     color: '#007BFF',
+    marginRight: 10,
   },
   modalContent: {
     backgroundColor: '#FFF',
@@ -268,13 +286,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    textAlign: 'center',
+
   },
   input: {
     borderColor: '#CCC',
     borderWidth: 1,
-    padding: 8,
-    borderRadius: 4,
+    padding: 10,
+    borderRadius: 5,
     marginBottom: 10,
+    marginTop: 15,
+
   },
 });
 
