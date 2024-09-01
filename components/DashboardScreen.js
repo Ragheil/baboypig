@@ -15,26 +15,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { collection, query, onSnapshot } from 'firebase/firestore';
-import { firestore } from '../firebase/config2';
+import { firestore, auth } from '../firebase/config2'; // Adjust the import to include auth
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pigGroups, setPigGroups] = useState([]);
   const sidebarTranslateX = useState(new Animated.Value(Dimensions.get('window').width))[0];
   const navigation = useNavigation();
+  const user = auth.currentUser;
 
   useEffect(() => {
-    const q = query(collection(firestore, 'pigGroups'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const groups = [];
-      snapshot.forEach((doc) => {
-        groups.push({ id: doc.id, ...doc.data() });
+    if (user) {
+      const q = query(collection(firestore, `users/${user.uid}/pigGroups`)); // Adjusted to include user UID
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const groups = [];
+        snapshot.forEach((doc) => {
+          groups.push({ id: doc.id, ...doc.data() });
+        });
+        setPigGroups(groups);
       });
-      setPigGroups(groups);
-    });
 
-    return () => unsubscribe();
-  }, []);
+      return () => unsubscribe();
+    }
+  }, [user]);
 
   const toggleSidebar = () => {
     Animated.timing(sidebarTranslateX, {
@@ -92,8 +95,11 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           <FlatList
             data={pigGroups}
             renderItem={({ item }) => (
-              <View style={[styles.pigGroupSummary, { width: 150 }]}>
+              <View style={styles.pigGroupSummary}>
                 <Text style={styles.pigGroupText}>{item.name}</Text>
+                <Text style={styles.pigCountText}>
+                  <Text style={styles.boldText}>{item.pigCount || 0} Pigs</Text>
+                </Text>
               </View>
             )}
             keyExtractor={(item) => item.id}
@@ -180,10 +186,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     flexDirection: 'row',
+    minWidth: 150,
   },
   pigGroupText: {
     fontSize: 18,
     color: '#333',
+  },
+  pigCountText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  boldText: {
+    fontWeight: 'bold',
   },
   flatListContent: {
     paddingHorizontal: 10,
@@ -248,7 +262,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     marginTop: 60,
-
   },
   sidebarDivider: {
     backgroundColor: '#869F77',
@@ -260,15 +273,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sidebarButton: {
-    marginTop: 20,
+    backgroundColor: '#869F77',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#869F77',
     borderRadius: 5,
+    alignItems: 'center',
   },
   sidebarButtonText: {
     color: '#fff',
     fontSize: 18,
-    textAlign: 'center',
   },
 });

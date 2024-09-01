@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, Modal } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, Modal, TouchableOpacity, Image } from 'react-native';
 import { addDoc, collection, query, onSnapshot, doc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { auth, firestore } from '../firebase/config2'; // Adjust the path as needed
 import { Picker } from '@react-native-picker/picker';
+import deleteIcon from '../assets/images/buttons/deleteIcon.png';
+import editIcon from '../assets/images/buttons/editIcon.png';
+import viewIcon from '../assets/images/buttons/viewIcon.png';
 
 export default function AddPigInfoScreen({ route }) {
   const { pigGroupId, userId } = route.params;
@@ -16,6 +19,8 @@ export default function AddPigInfoScreen({ route }) {
   const [pigGroupName, setPigGroupName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedPig, setSelectedPig] = useState(null);
   const user = auth.currentUser;
 
   // Fetch Pig Group Name
@@ -43,17 +48,10 @@ export default function AddPigInfoScreen({ route }) {
       try {
         const q = query(collection(firestore, `users/${user.uid}/pigGroups/${pigGroupId}/pigs`));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-          console.log('Snapshot received:', snapshot); // Debugging
           if (snapshot.empty) {
-            console.log('No pigs found.');
-            setPigs([]); // Set state to empty if no pigs found
+            setPigs([]);
           } else {
-            const pigsList = snapshot.docs.map(doc => {
-              const data = doc.data();
-              console.log('Pig data:', data); // Debug individual pig data
-              return { id: doc.id, ...data };
-            });
-            console.log('Pigs fetched:', pigsList); // Should log all fetched pigs
+            const pigsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setPigs(pigsList);
           }
         }, (error) => {
@@ -104,9 +102,8 @@ export default function AddPigInfoScreen({ route }) {
         race,
         createdAt: new Date(),
       });
-      console.log('Pig added with ID:', docRef.id); // Confirm addition
       Alert.alert('Success', 'Pig added successfully!');
-      setModalVisible(false); // Close modal
+      setModalVisible(false);
       // Reset form
       setPigName('');
       setTagNumber('');
@@ -137,10 +134,9 @@ export default function AddPigInfoScreen({ route }) {
         gender,
         race,
       });
-      console.log('Pig updated with ID:', currentPigId); // Confirm update
       Alert.alert('Success', 'Pig updated successfully!');
       setIsEditing(false);
-      setModalVisible(false); // Close modal
+      setModalVisible(false);
       setPigName('');
       setTagNumber('');
       setGender('male');
@@ -162,7 +158,6 @@ export default function AddPigInfoScreen({ route }) {
         { text: 'Delete', style: 'destructive', onPress: async () => {
             try {
               await deleteDoc(doc(firestore, `users/${user.uid}/pigGroups/${pigGroupId}/pigs/${pigId}`));
-              console.log('Pig deleted with ID:', pigId); // Confirm deletion
               Alert.alert('Success', 'Pig deleted successfully!');
             } catch (error) {
               console.error('Error deleting pig:', error);
@@ -180,13 +175,19 @@ export default function AddPigInfoScreen({ route }) {
 
   // Render Pig Item
   const renderPig = ({ item }) => (
-    <View style={styles.pigBox}>
-      <Text style={styles.pigText}>{item.pigName}</Text>
-      <Text style={styles.pigText}>Tag Number: {item.tagNumber}</Text>
-      <Text style={styles.pigText}>Gender: {item.gender}</Text>
-      <Text style={styles.pigText}>Race: {item.race}</Text>
+    <View style={styles.pigContainer}>
+      <View style={styles.pigInfo}>
+        <Text style={styles.pigText}>Tag Number: {item.tagNumber}</Text>
+        <Text style={styles.pigText}>Pig Name: {item.pigName}</Text>
+      </View>
       <View style={styles.actionsContainer}>
-        <Button title="Edit" onPress={() => {
+        <TouchableOpacity onPress={() => {
+          setSelectedPig(item);
+          setDetailModalVisible(true);
+        }}>
+          <Image source={viewIcon} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => {
           setPigName(item.pigName);
           setTagNumber(item.tagNumber);
           setGender(item.gender);
@@ -194,8 +195,12 @@ export default function AddPigInfoScreen({ route }) {
           setCurrentPigId(item.id);
           setIsEditing(true);
           setModalVisible(true);
-        }} />
-        <Button title="Delete" color="red" onPress={() => handleDeletePig(item.id)} />
+        }}>
+          <Image source={editIcon} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleDeletePig(item.id)}>
+          <Image source={deleteIcon} style={styles.icon} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -211,7 +216,7 @@ export default function AddPigInfoScreen({ route }) {
             setIsEditing(false);
             setModalVisible(true);
           }}
-          style={styles.addButton}
+          style={styles.addButton} color="#4CAF50"
         />
         <TextInput
           style={styles.searchInput}
@@ -231,26 +236,28 @@ export default function AddPigInfoScreen({ route }) {
       {/* Add/Edit Pig Modal */}
       <Modal
         visible={modalVisible}
-        animationType="slide"
         transparent={true}
+        animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{isEditing ? 'Edit Pig' : 'Add Pig'}</Text>
+            <Text style={styles.label}>Pig Name</Text>
             <TextInput
-              style={styles.modalInput}
+              style={styles.input}
               placeholder="Pig Name"
               value={pigName}
               onChangeText={setPigName}
             />
+            <Text style={styles.label}>Tag Number</Text>
             <TextInput
-              style={styles.modalInput}
+              style={styles.input}
               placeholder="Tag Number"
               value={tagNumber}
               onChangeText={setTagNumber}
               keyboardType="numeric"
             />
+            <Text style={styles.label}>Gender</Text>
             <Picker
               selectedValue={gender}
               style={styles.picker}
@@ -259,31 +266,56 @@ export default function AddPigInfoScreen({ route }) {
               <Picker.Item label="Male" value="male" />
               <Picker.Item label="Female" value="female" />
             </Picker>
+            <Text style={styles.label}>Race</Text>
             <TextInput
-              style={styles.modalInput}
+              style={styles.input}
               placeholder="Race"
               value={race}
               onChangeText={setRace}
             />
-            <View style={styles.modalButtons}>
-              <Button
-                title={isEditing ? 'Save Changes' : 'Add Pig'}
-                onPress={isEditing ? handleEditPig : handleAddPig}
-              />
-              <Button
-                title="Cancel"
-                onPress={() => {
-                  setModalVisible(false);
-                  setPigName('');
-                  setTagNumber('');
-                  setGender('male');
-                  setRace('');
-                  setIsEditing(false);
-                  setCurrentPigId(null);
-                }}
-                color="gray"
-              />
-            </View>
+            <Button
+              title={isEditing ? 'Update Pig' : 'Add Pig'}
+              onPress={isEditing ? handleEditPig : handleAddPig}
+              color="#4CAF50"
+            />
+            <Button
+              title="Cancel"
+              onPress={() => {
+                setModalVisible(false);
+                setPigName('');
+                setTagNumber('');
+                setGender('male');
+                setRace('');
+                setCurrentPigId(null);
+              }}
+              color="#F44336"
+            />
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Pig Detail Modal */}
+      <Modal
+        visible={detailModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setDetailModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {selectedPig && (
+              <>
+                <Text style={styles.label}>Pig Name: {selectedPig.pigName}</Text>
+                <Text style={styles.label}>Tag Number: {selectedPig.tagNumber}</Text>
+                <Text style={styles.label}>Gender: {selectedPig.gender}</Text>
+                <Text style={styles.label}>Race: {selectedPig.race}</Text>
+              </>
+            )}
+            <Button
+              title="Close"
+              onPress={() => setDetailModalVisible(false)}
+              color="#F44336"
+            />
           </View>
         </View>
       </Modal>
@@ -294,56 +326,62 @@ export default function AddPigInfoScreen({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 10,
     marginTop: 60,
+
   },
   groupName: {
     fontSize: 18,
-    marginBottom: 16,
+    marginBottom: 20,
+    fontWeight: 'bold',
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   searchInput: {
-    flex: 1,
-    height: 40,
-    borderColor: 'gray',
     borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    marginLeft: 8,
+    borderColor: '#ddd',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
   },
   addButton: {
-    marginRight: 8,
+    marginBottom: 10,
   },
   list: {
     flex: 1,
   },
   listContent: {
-    paddingBottom: 16,
+    paddingBottom: 20,
   },
-  pigBox: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
+  pigContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  pigInfo: {
+    flex: 1,
   },
   pigText: {
     fontSize: 16,
-    marginBottom: 8,
+    marginBottom: 5,
   },
   actionsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  icon: {
+    width: 24,
+    height: 24,
+    marginHorizontal: 5,
   },
   modalContainer: {
     flex: 1,
@@ -352,31 +390,27 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    width: '80%',
-    padding: 20,
     backgroundColor: '#fff',
-    borderRadius: 8,
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  modalInput: {
-    height: 40,
-    borderColor: 'gray',
+  input: {
     borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    marginBottom: 12,
+    borderColor: '#ddd',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 15,
   },
   picker: {
-    height: 40,
-    width: '100%',
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    marginBottom: 15,
   },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
   },
 });

@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where } from 'firebase/firestore';
 import { auth, firestore } from '../firebase/config2'; // Adjust the path as needed
 import Modal from 'react-native-modal'; // Ensure this import is present for the modal library
+
+// Import your icons
+import editIcon from '../assets/images/buttons/editIcon.png'; // Adjust the path as needed
+import deleteIcon from '../assets/images/buttons/deleteIcon.png'; // Adjust the path as needed
 
 const PigGroupsScreen = ({ navigation }) => {
   const [pigGroups, setPigGroups] = useState([]);
@@ -57,9 +61,30 @@ const PigGroupsScreen = ({ navigation }) => {
     }
   };
 
+  const isPigGroupNameDuplicate = async (name) => {
+    if (!user) return false;
+    
+    try {
+      const userPigGroupsCollection = collection(firestore, `users/${user.uid}/pigGroups`);
+      const q = query(userPigGroupsCollection, where('name', '==', name));
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error('Error checking pig group name:', error);
+      return false;
+    }
+  };
+
   const addOrUpdatePigGroup = async () => {
     if (!name.trim()) {
       Alert.alert('Validation Error', 'Name is required!');
+      return;
+    }
+
+    // Check for duplicate name
+    const isDuplicate = await isPigGroupNameDuplicate(name);
+    if (isDuplicate && (!editPigGroupId || pigGroups.find(group => group.name === name)?.id !== editPigGroupId)) {
+      Alert.alert('Validation Error', 'A pig group with this name already exists!');
       return;
     }
 
@@ -131,38 +156,40 @@ const PigGroupsScreen = ({ navigation }) => {
   };
 
   const renderPigGroups = () => {
-    const rows = [];
-    for (let i = 0; i < filteredPigGroups.length; i += 3) {
-      rows.push(filteredPigGroups.slice(i, i + 3));
-    }
-
-    return rows.map((row, index) => (
-      <View key={index} style={styles.row}>
-        {row.map(pigGroup => (
-          <TouchableOpacity key={pigGroup.id} onPress={() => handlePigGroupClick(pigGroup)} style={styles.pigGroupItem}>
+    return (
+      <View style={styles.grid}>
+        {filteredPigGroups.map(pigGroup => (
+          <TouchableOpacity
+            key={pigGroup.id}
+            onPress={() => handlePigGroupClick(pigGroup)}
+            style={styles.pigGroupItem}
+          >
             <Text style={styles.pigGroupText}>
-              {pigGroup.name} <Text style={styles.boldText}>{pigGroup.pigCount} {/* pigs Pig count name here */} </Text> 
+              {pigGroup.name}
+            </Text>
+            <Text style={styles.pigCountText}>
+              <Text style={styles.boldText}>{pigGroup.pigCount} Pigs</Text>
             </Text>
             <View style={styles.actions}>
               <TouchableOpacity onPress={() => startEditPigGroup(pigGroup)}>
-                <Text style={styles.actionText}>Edit</Text>
+                <Image source={editIcon} style={styles.icon} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => confirmDeletePigGroup(pigGroup)}>
-                <Text style={styles.actionText}>Delete</Text>
+                <Image source={deleteIcon} style={styles.icon} />
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
         ))}
       </View>
-    ));
+    );
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Pig Group</Text>
+      <Text style={styles.title}>Pig Groups</Text>
 
       <View style={styles.searchAndAddContainer}>
-        <Button title="Add Pig Group" onPress={openAddPigGroupModal} color="#4CAF50" />
+        <Button title="Add Pig Group" onPress={openAddPigGroupModal} color="#4CAF50" style={styles.addButton} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name"
@@ -186,33 +213,31 @@ const PigGroupsScreen = ({ navigation }) => {
             value={name}
             onChangeText={setName}
           />
-          <Button title="Save" onPress={addOrUpdatePigGroup} color="#4CAF50" />
-          <Button title="Cancel" onPress={closeModal} color="#F44336" />
+          <Button title="Save" onPress={addOrUpdatePigGroup} color="#4CAF50" style={styles.saveButton} />
+          <Button title="Cancel" onPress={closeModal} color="#F44336" style={styles.cancelButton} />
         </View>
       </Modal>
 
       {/* Modal for confirming deletion */}
-{/* Modal for confirming deletion */}
-<Modal isVisible={isDeleteModalVisible} onBackdropPress={closeModal}>
-  <View style={styles.modalContent}>
-    <Text style={styles.modalTitle}>Confirm Deletion</Text>
-    <Text>
-      <Text style={styles.boldText}>Warning:</Text> Deleting this group will remove all the 
-      <Text style={styles.boldText}> Pig Information</Text> within it. Are you sure you want to 
-      delete this group? Type "<Text style={styles.boldText}>{currentPigGroupName}</Text>" 
-      to confirm:
-    </Text>
-    <TextInput
-      style={styles.input}
-      placeholder="Enter Pig Group Name"
-      value={deleteConfirmation}
-      onChangeText={setDeleteConfirmation}
-    />
-    <Button title="Delete" onPress={deletePigGroup} color="#F44336" />
-    <Button title="Cancel" onPress={closeModal} color="#4CAF50" />
-  </View>
-</Modal>
-
+      <Modal isVisible={isDeleteModalVisible} onBackdropPress={closeModal}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Confirm Deletion</Text>
+          <Text>
+            <Text style={styles.boldText}>Warning:</Text> Deleting this group will remove all the 
+            <Text style={styles.boldText}> Pig Information</Text> within it. Are you sure you want to 
+            delete this group? Type "<Text style={styles.boldText}>{currentPigGroupName}</Text>" 
+            to confirm:
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Pig Group Name"
+            value={deleteConfirmation}
+            onChangeText={setDeleteConfirmation}
+          />
+          <Button title="Delete" onPress={deletePigGroup} color="#F44336" style={styles.saveButton} />
+          <Button title="Cancel" onPress={closeModal} color="#4CAF50" style={styles.cancelButton} />
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -221,50 +246,52 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: '#F5F5F5',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
-    marginTop: 60,
+    marginBottom: 16,
+    textAlign: 'center',
+    marginTop: 60
   },
   searchAndAddContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   searchInput: {
-    borderColor: '#CCC',
-    borderWidth: 1,
-    padding: 8,
-    borderRadius: 4,
     flex: 1,
-    marginLeft: 10,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 8,
+    marginLeft: 8,
   },
-  tableHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  row: {
+  grid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
   },
   pigGroupItem: {
-    flex: 1,
-    padding: 10,
-    marginRight: 10,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 5,
-    borderColor: '#CCC',
-    borderWidth: 1,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    margin: 8,
+    width: '45%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   pigGroupText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  pigCountText: {
+    marginTop: 8,
     fontSize: 16,
-    marginBottom: 10,
   },
   boldText: {
     fontWeight: 'bold',
@@ -272,31 +299,47 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 16,
   },
-  actionText: {
-    color: '#007BFF',
-    marginRight: 10,
+  icon: {
+    width: 24,
+    height: 24,
+  },
+  tableHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   modalContent: {
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderRadius: 10,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-
+    marginBottom: 16,
   },
   input: {
-    borderColor: '#CCC',
+    borderColor: '#ccc',
     borderWidth: 1,
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
-    marginTop: 15,
-
+    borderRadius: 4,
+    padding: 8,
+    width: '100%',
+    marginBottom: 16,
+  },
+  addButton: {
+    width: '100%',
+    marginBottom: 8,
+  },
+  saveButton: {
+    width: '100%',
+    marginBottom: 8,
+    marginTop: 50
+  },
+  cancelButton: {
+    width: '100%',
   },
 });
 
