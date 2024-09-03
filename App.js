@@ -1,9 +1,7 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@firebase/auth';
+import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { StyleSheet } from 'react-native';
 
@@ -68,13 +66,17 @@ export default function App() {
         await signInWithEmailAndPassword(auth, email, password);
         console.log(`User signed in successfully: ${email}`);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
-        console.log(`User created successfully: ${email}`);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-        const userDoc = doc(firestore, 'users', auth.currentUser.uid);
+        // Send email verification
+        await sendEmailVerification(user);
+
+        console.log(`User created successfully: ${email}`);
+        const userDoc = doc(firestore, 'users', user.uid);
         await setDoc(userDoc, { firstName, lastName });
 
-        console.log(`User data saved for ${auth.currentUser.uid}: First Name: ${firstName}, Last Name: ${lastName}`);
+        console.log(`User data saved for ${user.uid}: First Name: ${firstName}, Last Name: ${lastName}`);
         setIsFarmNameSet(false);
       }
     } catch (error) {
@@ -129,7 +131,7 @@ export default function App() {
               />
               <Stack.Screen
                 name="FarmName"
-                options={{ headerShown: false }} // Register the FarmName screen
+                options={{ headerShown: false }}
               >
                 {(props) => <FarmNameScreen {...props} onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); }} />}
               </Stack.Screen>

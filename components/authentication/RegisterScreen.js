@@ -11,7 +11,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
 
   const handleRegister = () => {
     if (password !== retypePassword) {
-      alert("Passwords don't match!");
+      Alert.alert("Passwords don't match!");
       return;
     }
     handleAuthentication(firstName, lastName);
@@ -23,14 +23,14 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
       
       <View style={styles.nameContainer}>
         <TextInput
-          style={[styles.input, styles.halfInput]} // Adjusted styles for consistent width
+          style={[styles.input, styles.halfInput]}
           value={firstName}
           onChangeText={setFirstName}
           placeholder="First Name"
         />
         
         <TextInput
-          style={[styles.input, styles.halfInput]} // Adjusted styles for consistent width
+          style={[styles.input, styles.halfInput]}
           value={lastName}
           onChangeText={setLastName}
           placeholder="Last Name"
@@ -38,7 +38,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
       </View>
       
       <TextInput
-        style={styles.input} // Full width input
+        style={styles.input}
         value={email}
         onChangeText={setEmail}
         placeholder="Email Address"
@@ -48,7 +48,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
       
       <View style={styles.passwordContainer}>
         <TextInput
-          style={styles.input} // Full width input
+          style={styles.input}
           value={password}
           onChangeText={setPassword}
           placeholder="Password"
@@ -64,7 +64,7 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
       
       <View style={styles.passwordContainer}>
         <TextInput
-          style={styles.input} // Full width input
+          style={styles.input}
           value={retypePassword}
           onChangeText={setRetypePassword}
           placeholder="Retype Password"
@@ -77,17 +77,19 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
           <Ionicons name={retypePasswordVisible ? "eye-off" : "eye"} size={24} color="#333" />
         </TouchableOpacity>
       </View>
-      <Text style={styles.orText}>or login with</Text>
-
-<TouchableOpacity style={styles.googleButton}>
-  <Text style={styles.googleButtonText}>Google</Text>
-</TouchableOpacity>
-      <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-        <Text style={styles.registerButtonText}>Register</Text>
+      
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleRegister}
+      >
+        <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
       
-      <TouchableOpacity onPress={navigateToLogin}>
-        <Text style={styles.switchToLoginText}>Already have an account? Login</Text>
+      <TouchableOpacity
+        onPress={navigateToLogin}
+        style={styles.switch}
+      >
+        <Text style={styles.switchText}>Already have an account? Login</Text>
       </TouchableOpacity>
     </View>
   );
@@ -97,77 +99,55 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#869F77',
+    paddingHorizontal: 20,
   },
   header: {
     fontSize: 24,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#000000',
     fontWeight: 'bold',
-
-
+    marginBottom: 20,
+  },
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    padding: 15,
+    marginVertical: 10,
+    elevation: 2,
   },
   nameContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
   },
   halfInput: {
     flex: 1,
-    marginHorizontal: 5, // Adjusts spacing between First and Last Name fields
-  },
-  input: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    width: '100%', // Ensure full width for all input fields
-    backgroundColor: 'white',
+    marginRight: 10,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    position: 'relative',
   },
   toggleIcon: {
     position: 'absolute',
     right: 10,
+    top: 10,
   },
-
-  orText: {
-    textAlign: 'center',
+  button: {
+    backgroundColor: '#007bff',
+    borderRadius: 5,
+    padding: 15,
     marginVertical: 10,
-    color: '#666',
-  },
-  googleButton: {
-    backgroundColor: '#eee',
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginBottom: 20,
     alignItems: 'center',
   },
-  googleButtonText: {
-    color: '#333',
-  },
-  
-  registerButton: {
-    backgroundColor: '#000',
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  registerButtonText: {
+  buttonText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  switchToLoginText: {
+  switch: {
+    alignItems: 'center',
     marginTop: 20,
-    color: '#333',
-    textAlign: 'center',
+  },
+  switchText: {
+    color: '#007bff',
   },
 });
 
