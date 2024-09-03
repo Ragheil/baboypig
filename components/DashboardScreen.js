@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -17,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { firestore, auth } from '../firebase/config2';
 import DropDownPicker from 'react-native-dropdown-picker';
 
@@ -56,15 +53,12 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           const branchName = doc.data().name;
           branches.push({ label: branchName, value: doc.id });
         });
-        console.log('Branches:', branches); // Debugging output
         setFarmBranches(branches);
       });
-  
+
       return () => unsubscribe();
     }
   }, [user]);
-  
-  
 
   const toggleSidebar = () => {
     Animated.timing(sidebarTranslateX, {
@@ -98,9 +92,9 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     );
   };
 
-  const navigateToAddFarmBranch = () => {
+  const navigateToFarmNameScreen = () => {
     closeSidebar();
-    navigation.navigate('FarmName');
+    navigation.navigate('FarmName'); // Make sure this screen is set up in your navigation
   };
 
   return (
@@ -195,7 +189,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             labelStyle={{ color: '#333333', fontSize: 16 }}
           />
 
-          <TouchableOpacity style={styles.sidebarButton} onPress={navigateToAddFarmBranch}>
+          <TouchableOpacity style={styles.sidebarButton} onPress={navigateToFarmNameScreen}>
             <Text style={styles.sidebarButtonText}>Add Farm Branch</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.sidebarButton} onPress={confirmLogout}>
