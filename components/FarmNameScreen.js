@@ -1,70 +1,40 @@
+// FarmNameScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, firestore } from '../firebase/config2';
-import { useNavigation } from '@react-navigation/native';
 
-const FarmNameScreen = ({ route }) => {
+const FarmNameScreen = ({ onFarmNameSet }) => {
   const [farmName, setFarmName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();
-  const { isNewUser } = route.params || {}; // Check if the user is new or existing
 
   const handleSaveFarmName = async () => {
     if (farmName.trim() === '') {
-      Alert.alert('Validation', 'Please enter a valid name');
+      alert('Please enter a farm name');
       return;
     }
 
     try {
-      setLoading(true); // Show loading indicator
-      const userId = auth.currentUser.uid;
-
-      if (isNewUser) {
-        // Save the farm name for a new user
-        const userDocRef = doc(firestore, 'users', userId);
-        await setDoc(userDocRef, { farmName }, { merge: true }); // Use merge to keep existing data
-        console.log(`Farm name set: ${farmName}`);
-      } else {
-        // For existing users, add a new farm branch
-        const newBranchRef = doc(firestore, `users/${userId}/farmBranches/${farmName}`);
-        await setDoc(newBranchRef, { name: farmName });
-        console.log(`Farm branch saved: ${farmName}`);
-      }
-
-      // Navigate to Dashboard after setting the farm name or adding the farm branch
-      navigation.navigate('Dashboard');
+      const userDoc = doc(firestore, 'users', auth.currentUser.uid);
+      await setDoc(userDoc, { farmName }, { merge: true });
+      console.log(`Farm name saved: ${farmName}`);
+      onFarmNameSet(farmName); // Notify parent component
     } catch (error) {
-      console.error('Error saving farm name or branch:', error.message);
-      Alert.alert('Error', 'Failed to save farm name. Please try again.');
-    } finally {
-      setLoading(false); // Hide loading indicator
+      console.error('Error saving farm name:', error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>
-        {isNewUser ? 'Set Your Farm Name' : 'Enter New Farm Branch Name'}
-      </Text>
+      <Text style={styles.header}>Enter Your Farm Name</Text>
       <TextInput
         style={styles.input}
         value={farmName}
         onChangeText={setFarmName}
-        placeholder={isNewUser ? 'Farm Name' : 'Farm Branch Name'}
+        placeholder="Farm Name"
       />
-      <TouchableOpacity style={styles.saveButton} onPress={handleSaveFarmName} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.saveButtonText}>Save</Text>
-        )}
+      <TouchableOpacity style={styles.saveButton} onPress={handleSaveFarmName}>
+        <Text style={styles.saveButtonText}>Save</Text>
       </TouchableOpacity>
-      {!isNewUser && (
-        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()} disabled={loading}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
@@ -98,17 +68,6 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
-  },
-  cancelButton: {
-    backgroundColor: '#ccc',
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  cancelButtonText: {
-    color: '#000',
     fontWeight: 'bold',
   },
 });
