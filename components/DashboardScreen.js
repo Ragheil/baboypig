@@ -15,18 +15,22 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { collection, query, onSnapshot } from 'firebase/firestore';
-import { firestore, auth } from '../firebase/config2'; // Adjust the import to include auth
+import { firestore, auth } from '../firebase/config2';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pigGroups, setPigGroups] = useState([]);
+  const [farmBranches, setFarmBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [open, setOpen] = useState(false);
   const sidebarTranslateX = useState(new Animated.Value(Dimensions.get('window').width))[0];
   const navigation = useNavigation();
   const user = auth.currentUser;
 
   useEffect(() => {
     if (user) {
-      const q = query(collection(firestore, `users/${user.uid}/pigGroups`)); // Adjusted to include user UID
+      const q = query(collection(firestore, `users/${user.uid}/pigGroups`));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const groups = [];
         snapshot.forEach((doc) => {
@@ -38,6 +42,26 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       return () => unsubscribe();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      const branchQuery = query(collection(firestore, `users/${user.uid}/farmBranches`));
+      const unsubscribe = onSnapshot(branchQuery, (snapshot) => {
+        const branches = [];
+        snapshot.forEach((doc) => {
+          // Ensure to use 'name' from document data
+          const branchName = doc.data().name;
+          branches.push({ label: branchName, value: doc.id });
+        });
+        console.log('Branches:', branches); // Debugging output
+        setFarmBranches(branches);
+      });
+  
+      return () => unsubscribe();
+    }
+  }, [user]);
+  
+  
 
   const toggleSidebar = () => {
     Animated.timing(sidebarTranslateX, {
@@ -71,6 +95,11 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     );
   };
 
+  const navigateToAddFarmBranch = () => {
+    closeSidebar();
+    navigation.navigate('FarmName');
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -80,7 +109,6 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         <View style={styles.contentContainer}>
           <Text style={styles.title}>Pig Groups Summary</Text>
 
-          {/* Conditionally Render the See All Button */}
           {!sidebarVisible && (
             <TouchableOpacity
               style={styles.seeAllButton}
@@ -107,14 +135,13 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.flatListContent}
             snapToAlignment="center"
-            snapToInterval={160} // Ensure this matches the item width + margin
+            snapToInterval={160}
             decelerationRate="fast"
             ListEmptyComponent={<Text>No pig groups available.</Text>}
-            style={styles.flatList} // Ensure FlatList does not expand vertically
+            style={styles.flatList}
           />
         </View>
 
-        {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity style={styles.footerItem}>
             <Image source={require('../assets/images/navigation/home.png')} style={styles.footerImage} />
@@ -141,7 +168,6 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           </TouchableOpacity>
         </View>
 
-        {/* Sidebar */}
         <TouchableWithoutFeedback onPress={closeSidebar}>
           <Animated.View style={[styles.sidebarOverlay, { opacity: sidebarVisible ? 0.5 : 0 }]} />
         </TouchableWithoutFeedback>
@@ -149,6 +175,26 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           <Text style={styles.sidebarHeader}>{firstName} {lastName}</Text>
           <Divider style={styles.sidebarDivider} />
           <Text style={styles.sidebarText}>Farm: {farmName}</Text>
+
+          {/* Dropdown for selecting farm branch */}
+          <DropDownPicker
+            open={open}
+            value={selectedBranch}
+            items={farmBranches}
+            setOpen={setOpen}
+            setValue={setSelectedBranch}
+            setItems={setFarmBranches}
+            placeholder="Select Farm Branch"
+            containerStyle={{ width: '100%', marginBottom: 20 }}
+            style={{ backgroundColor: '#f0f0f0', borderColor: '#869F77' }}
+            dropDownContainerStyle={{ backgroundColor: '#eeeeee', borderColor: '#869F77' }}
+            textStyle={{ color: '#333333', fontSize: 16 }}
+            labelStyle={{ color: '#333333', fontSize: 16 }}
+          />
+
+          <TouchableOpacity style={styles.sidebarButton} onPress={navigateToAddFarmBranch}>
+            <Text style={styles.sidebarButtonText}>Add Farm Branch</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.sidebarButton} onPress={confirmLogout}>
             <Text style={styles.sidebarButtonText}>Logout</Text>
           </TouchableOpacity>
@@ -273,11 +319,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sidebarButton: {
-    backgroundColor: '#869F77',
     paddingVertical: 10,
     paddingHorizontal: 20,
+    backgroundColor: '#869F77',
     borderRadius: 5,
-    alignItems: 'center',
+    marginBottom: 10,
   },
   sidebarButtonText: {
     color: '#fff',

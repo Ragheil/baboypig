@@ -125,6 +125,12 @@ export default function App() {
                 component={ContactScreen}
                 options={{ headerShown: false }}
               />
+              <Stack.Screen
+                name="FarmName"
+                options={{ headerShown: false }} // Register the FarmName screen
+              >
+                {(props) => <FarmNameScreen {...props} onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); }} />}
+              </Stack.Screen>
             </>
           ) : (
             <Stack.Screen
