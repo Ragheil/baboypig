@@ -29,6 +29,7 @@ export default function App() {
   const [isLogin, setIsLogin] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isFarmNameSet, setIsFarmNameSet] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -54,6 +55,8 @@ export default function App() {
         setFarmName('');
         setFirstName('');
         setLastName('');
+        setIsFarmNameSet(false);
+        setIsNewUser(false);
       }
     });
 
@@ -78,6 +81,7 @@ export default function App() {
 
         console.log(`User data saved for ${user.uid}: First Name: ${firstName}, Last Name: ${lastName}`);
         setIsFarmNameSet(false);
+        setIsNewUser(true); // Mark as a new user
       }
     } catch (error) {
       console.error('Authentication error:', error.message);
@@ -93,6 +97,7 @@ export default function App() {
     setLastName('');
     setIsLogin(true);
     setShowWelcome(true);
+    setIsNewUser(false); // Reset new user state
   };
 
   return (
@@ -129,19 +134,31 @@ export default function App() {
                 component={ContactScreen}
                 options={{ headerShown: false }}
               />
-              <Stack.Screen
-                name="FarmName"
-                options={{ headerShown: false }}
-              >
-                {(props) => <FarmNameScreen {...props} onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); }} />}
-              </Stack.Screen>
+              {/* No need to show FarmNameScreen again if farm name is set */}
             </>
-          ) : (
+          ) : isNewUser ? (
             <Stack.Screen
               name="FarmName"
               options={{ headerShown: false }}
             >
-              {(props) => <FarmNameScreen {...props} onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); }} />}
+              {(props) => <FarmNameScreen {...props} onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); setIsNewUser(false); }} />}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen
+              name="Login"
+              options={{ headerShown: false }}
+            >
+              {(props) => (
+                <LoginScreen
+                  {...props}
+                  email={email}
+                  setEmail={setEmail}
+                  password={password}
+                  setPassword={setPassword}
+                  handleAuthentication={handleAuthentication}
+                  navigateToRegister={() => setIsLogin(false)}
+                />
+              )}
             </Stack.Screen>
           )
         ) : isLogin ? (
