@@ -106,99 +106,70 @@ const LoginScreen = ({ email, setEmail, password, setPassword, handleAuthenticat
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 20,
-  },
-  headerBox: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 20,
+    textAlign: 'center',
   },
-  emailContainer: {
-    marginBottom: 20,
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 15,
+    marginVertical: 10,
+    elevation: 2,
+    fontSize: 16,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#f9f9f9',
-  },
-  emailInput: {
-    borderColor: '#007AFF', // Blue border for focus
-    backgroundColor: '#E8F0FE', // Light blue background for email input
-    paddingLeft: 15, // Extra padding on the left
-    borderRadius: 8, // Slightly more rounded corners
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginVertical: 10,
+    elevation: 2,
   },
   toggleIcon: {
-    marginLeft: 10,
-  },
-  orText: {
-    textAlign: 'center',
-    color: '#999',
-    marginBottom: 20,
-  },
-  googleButton: {
-    backgroundColor: '#4285F4',
-    paddingVertical: 12,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  googleButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  loginButton: {
-    backgroundColor: '#333',
-    paddingVertical: 12,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  toggleText: {
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 10,
+    position: 'absolute',
+    right: 15,
   },
   button: {
-    backgroundColor: '#333',
-    paddingVertical: 12,
-    borderRadius: 5,
+    backgroundColor: '#007bff',
+    borderRadius: 8,
+    padding: 15,
+    marginVertical: 10,
     alignItems: 'center',
-    marginBottom: 20,
   },
   buttonText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
+  switch: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
   switchText: {
-    textAlign: 'center',
-    color: '#666',
+    color: '#007bff',
+    fontSize: 14,
+  },
+  googleButton: {
+    backgroundColor: '#4285F4',
+    borderRadius: 8,
+    padding: 15,
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  googleButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
