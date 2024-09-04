@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
@@ -20,92 +20,103 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerBox}>
-        <Text style={styles.title}>PigEx</Text>
-      </View>
-
-      <Text style={styles.header}>Create your account</Text>
-      
-      <View style={styles.nameContainer}>
-        <TextInput
-          style={[styles.input, styles.halfInput]}
-          value={firstName}
-          onChangeText={setFirstName}
-          placeholder="First Name"
-        />
-        
-        <TextInput
-          style={[styles.input, styles.halfInput]}
-          value={lastName}
-          onChangeText={setLastName}
-          placeholder="Last Name"
-        />
-      </View>
-      
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email Address"
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-          secureTextEntry={!passwordVisible}
-        />
-        <TouchableOpacity
-          onPress={() => setPasswordVisible(!passwordVisible)}
-          style={styles.toggleIcon}
-        >
-          <Ionicons name={passwordVisible ? "eye-off" : "eye"} size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.input}
-          value={retypePassword}
-          onChangeText={setRetypePassword}
-          placeholder="Retype Password"
-          secureTextEntry={!retypePasswordVisible}
-        />
-        <TouchableOpacity
-          onPress={() => setRetypePasswordVisible(!retypePasswordVisible)}
-          style={styles.toggleIcon}
-        >
-          <Ionicons name={retypePasswordVisible ? "eye-off" : "eye"} size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={styles.submitButton}
-        onPress={handleRegister}
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      style={styles.container}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollViewContent} 
+        keyboardShouldPersistTaps='handled'
       >
-        <Text style={styles.submitButtonText}>Submit</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity
-        onPress={navigateToLogin}
-        style={styles.loginButton}
-      >
-        <Text style={styles.loginButtonText}>Login</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.headerBox}>
+          <Text style={styles.title}>PigEx</Text>
+        </View>
+
+        <View style={styles.mainContent}>
+          <Text style={styles.header}>Create your account</Text>
+          
+          <View style={styles.nameContainer}>
+            <TextInput
+              style={[styles.input, styles.halfInput]}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="First Name"
+            />
+            
+            <TextInput
+              style={[styles.input, styles.halfInput]}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Last Name"
+            />
+          </View>
+          
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email Address"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password"
+              secureTextEntry={!passwordVisible}
+            />
+            <TouchableOpacity
+              onPress={() => setPasswordVisible(!passwordVisible)}
+              style={styles.toggleIcon}
+            >
+              <Ionicons name={passwordVisible ? "eye-off" : "eye"} size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.input}
+              value={retypePassword}
+              onChangeText={setRetypePassword}
+              placeholder="Retype Password"
+              secureTextEntry={!retypePasswordVisible}
+            />
+            <TouchableOpacity
+              onPress={() => setRetypePasswordVisible(!retypePasswordVisible)}
+              style={styles.toggleIcon}
+            >
+              <Ionicons name={retypePasswordVisible ? "eye-off" : "eye"} size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleRegister}
+          >
+            <Text style={styles.submitButtonText}>Submit</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={navigateToLogin}
+            style={styles.loginButton}
+          >
+            <Text style={styles.loginButtonText}>Login</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
     backgroundColor: '#F4F4F4',
   },
   headerBox: {
@@ -128,17 +139,23 @@ const styles = StyleSheet.create({
     color: '#000',
     textAlign: 'center',
   },
+  mainContent: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    marginTop: 170, // Adjust this value to avoid overlap with headerBox
+  },
   header: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
     color: '#000',
-    marginTop: 100,
   },
   nameContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 15,
   },
   halfInput: {
     flex: 1,

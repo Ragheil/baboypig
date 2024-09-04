@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../firebase/config2'; // Import auth here
@@ -35,83 +35,102 @@ const LoginScreen = ({ email, setEmail, password, setPassword, handleAuthenticat
 
   if (forgotPassword) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.header}>Forgot Password</Text>
-        <Text style={styles.instructions}>
-          Enter your email address below, and we'll send you an email with instructions to reset your password.
-        </Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email Address"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholderTextColor="#666"
-        />
-        <TouchableOpacity style={styles.resetButton} onPress={handleForgotPassword}>
-          <Text style={styles.resetButtonText}>Send Reset Link</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setForgotPassword(false)}>
-          <Text style={styles.switchText}>Back to Login</Text>
-        </TouchableOpacity>
-      </View>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={styles.container}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollViewContent} 
+          keyboardShouldPersistTaps='handled'
+        >
+          <View style={styles.headerBox}>
+            <Text style={styles.title}>PigEx</Text>
+          </View>
+          <View style={styles.mainContent}>
+            <Text style={styles.header}>Forgot Password</Text>
+            <Text style={styles.instructions}>
+              Enter your email address below, and we'll send you an email with instructions to reset your password.
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email Address"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor="#666"
+            />
+            <TouchableOpacity style={styles.resetButton} onPress={handleForgotPassword}>
+              <Text style={styles.resetButtonText}>Send Reset Link</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setForgotPassword(false)}>
+              <Text style={styles.switchText}>Back to Login</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerBox}>
-        <Text style={styles.title}>PigEx</Text>
-      </View>
-
-      <Text style={styles.header}>Login</Text>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email Address"
-          placeholderTextColor="#666"
-        />
-      </View>
-
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-          secureTextEntry={!passwordVisible}
-        />
-        <TouchableOpacity
-          onPress={() => setPasswordVisible(!passwordVisible)}
-          style={styles.toggleIcon}
-        >
-          <Ionicons name={passwordVisible ? "eye-off" : "eye"} size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity onPress={() => setForgotPassword(true)}>
-        <Text style={styles.toggleText}>Forgot Password?</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginButtonText}>Login</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.registerButton} onPress={navigateToRegister}>
-        <Text style={styles.registerButtonText}>Register</Text>
-      </TouchableOpacity>
-    </View>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      style={styles.container}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollViewContent} 
+        keyboardShouldPersistTaps='handled'
+      >
+        <View style={styles.headerBox}>
+          <Text style={styles.title}>PigEx</Text>
+        </View>
+        <View style={styles.mainContent}>
+          <Text style={styles.header}>Login</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email Address"
+              placeholderTextColor="#666"
+            />
+          </View>
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password"
+              secureTextEntry={!passwordVisible}
+            />
+            <TouchableOpacity
+              onPress={() => setPasswordVisible(!passwordVisible)}
+              style={styles.toggleIcon}
+            >
+              <Ionicons name={passwordVisible ? "eye-off" : "eye"} size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={() => setForgotPassword(true)}>
+            <Text style={styles.toggleText}>Forgot Password?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>Login</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.registerButton} onPress={navigateToRegister}>
+            <Text style={styles.registerButtonText}>Register</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
     backgroundColor: '#F4F4F4',
   },
   headerBox: {
@@ -133,13 +152,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
+  mainContent: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    marginTop: 200, // Make space for the header box
+  },
   header: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
     color: '#000',
-    marginTop: 80
   },
   instructions: {
     fontSize: 16,
@@ -156,6 +180,7 @@ const styles = StyleSheet.create({
   input: {
     padding: 15,
     fontSize: 16,
+    color: '#000',
   },
   passwordContainer: {
     flexDirection: 'row',
@@ -200,7 +225,7 @@ const styles = StyleSheet.create({
     padding: 15,
     marginVertical: 10,
     alignItems: 'center',
-    elevation: 50,
+    elevation: 4,
   },
   registerButtonText: {
     color: '#FFFFFF',
