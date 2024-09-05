@@ -195,25 +195,29 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Account Information</Text>
-            <TextInput
-              style={styles.input}
-              value={updatedFirstName}
-              onChangeText={setUpdatedFirstName}
-              placeholder="First Name"
-            />
-            <TextInput
-              style={styles.input}
-              value={updatedLastName}
-              onChangeText={setUpdatedLastName}
-              placeholder="Last Name"
-            />
-            <TextInput
-              style={styles.input}
-              value={updatedFarmName}
-              onChangeText={setUpdatedFarmName}
-              placeholder="Farm Name"
-            />
+          <Text style={styles.modalTitle}>Edit Account Information</Text>
+              <Text style={styles.modalLabel}>First Name</Text>
+              <TextInput
+                style={styles.input}
+                value={updatedFirstName}
+                onChangeText={setUpdatedFirstName}
+                placeholder="First Name"
+              />
+              <Text style={styles.modalLabel}>Last Name</Text>
+              <TextInput
+                style={styles.input}
+                value={updatedLastName}
+                onChangeText={setUpdatedLastName}
+                placeholder="Last Name"
+              />
+              <Text style={styles.modalLabel}>Farm Name</Text>
+              <TextInput
+                style={styles.input}
+                value={updatedFarmName}
+                onChangeText={setUpdatedFarmName}
+                placeholder="Farm Name"
+              />
+
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalButton} onPress={handleUpdate}>
                 <Text style={styles.modalButtonText}>Save</Text>
@@ -413,4 +417,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
+  modalLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    alignSelf: 'flex-start',
+    marginBottom: 5,
+  }
+  
 });
