@@ -84,7 +84,7 @@ const PigGroupsScreen = ({ navigation }) => {
     // Check for duplicate name
     const isDuplicate = await isPigGroupNameDuplicate(name);
     if (isDuplicate && (!editPigGroupId || pigGroups.find(group => group.name === name)?.id !== editPigGroupId)) {
-      Alert.alert('Validation Error', 'A pig group with this name already exists!');
+      Alert.alert('Duplicate Pig Group', 'A pig group with this name already exists. Please try another name.');
       return;
     }
 

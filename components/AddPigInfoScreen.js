@@ -90,7 +90,7 @@ export default function AddPigInfoScreen({ route }) {
     }
 
     if (await checkForDuplicates()) {
-      Alert.alert('Duplicate Error', 'Pig Name or Tag Number already exists.');
+      Alert.alert('Duplicate Pig Name', 'A Pig Name already exists. Please try another name.');
       return;
     }
 
