@@ -195,7 +195,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Edit Account Information</Text>
+          <Text style={styles.modalTitle}>Edit Farm Information</Text>
               <Text style={styles.modalLabel}>First Name</Text>
               <TextInput
                 style={styles.input}
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 5,
-    marginTop: 30
+    marginTop: 43
   },
   accountButtonText: {
     color: '#fff',
