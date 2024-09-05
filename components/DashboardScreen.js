@@ -10,23 +10,32 @@ import {
   TouchableWithoutFeedback,
   Alert,
   FlatList,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { firestore, auth } from '../firebase/config2'; // Adjust the import to include auth
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pigGroups, setPigGroups] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [updatedFirstName, setUpdatedFirstName] = useState(firstName);
+  const [updatedLastName, setUpdatedLastName] = useState(lastName);
+  const [updatedFarmName, setUpdatedFarmName] = useState(farmName);
+  const [currentFirstName, setCurrentFirstName] = useState(firstName);
+  const [currentLastName, setCurrentLastName] = useState(lastName);
+  const [currentFarmName, setCurrentFarmName] = useState(farmName);
   const sidebarTranslateX = useState(new Animated.Value(Dimensions.get('window').width))[0];
   const navigation = useNavigation();
   const user = auth.currentUser;
 
   useEffect(() => {
     if (user) {
-      const q = query(collection(firestore, `users/${user.uid}/pigGroups`)); // Adjusted to include user UID
+      const q = query(collection(firestore, `users/${user.uid}/pigGroups`));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const groups = [];
         snapshot.forEach((doc) => {
@@ -38,6 +47,12 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       return () => unsubscribe();
     }
   }, [user]);
+
+  useEffect(() => {
+    setCurrentFirstName(updatedFirstName);
+    setCurrentLastName(updatedLastName);
+    setCurrentFarmName(updatedFarmName);
+  }, [updatedFirstName, updatedLastName, updatedFarmName]);
 
   const toggleSidebar = () => {
     Animated.timing(sidebarTranslateX, {
@@ -69,6 +84,18 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       ],
       { cancelable: true }
     );
+  };
+
+  const handleUpdate = async () => {
+    if (user) {
+      const userDoc = doc(firestore, `users/${user.uid}`);
+      await updateDoc(userDoc, {
+        firstName: updatedFirstName,
+        lastName: updatedLastName,
+        farmName: updatedFarmName,
+      });
+      setModalVisible(false);
+    }
   };
 
   return (
@@ -107,10 +134,10 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.flatListContent}
             snapToAlignment="center"
-            snapToInterval={160} // Ensure this matches the item width + margin
+            snapToInterval={160}
             decelerationRate="fast"
             ListEmptyComponent={<Text>No pig groups available.</Text>}
-            style={styles.flatList} // Ensure FlatList does not expand vertically
+            style={styles.flatList}
           />
         </View>
 
@@ -146,14 +173,58 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           <Animated.View style={[styles.sidebarOverlay, { opacity: sidebarVisible ? 0.5 : 0 }]} />
         </TouchableWithoutFeedback>
         <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarTranslateX }] }]}>
-          <Text style={styles.sidebarHeader}>{firstName} {lastName}</Text>
+          <View style={styles.sidebarHeaderContainer}>
+            <Text style={styles.sidebarHeader}>{currentFirstName} {currentLastName}</Text>
+            <TouchableOpacity style={styles.accountButton} onPress={() => setModalVisible(true)}>
+              <Text style={styles.accountButtonText}>Account</Text>
+            </TouchableOpacity>
+          </View>
           <Divider style={styles.sidebarDivider} />
-          <Text style={styles.sidebarText}>Farm: {farmName}</Text>
+          <Text style={styles.sidebarText}>Farm: {currentFarmName}</Text>
           <TouchableOpacity style={styles.sidebarButton} onPress={confirmLogout}>
             <Text style={styles.sidebarButtonText}>Logout</Text>
           </TouchableOpacity>
         </Animated.View>
       </LinearGradient>
+
+      {/* Edit Modal */}
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Account Information</Text>
+            <TextInput
+              style={styles.input}
+              value={updatedFirstName}
+              onChangeText={setUpdatedFirstName}
+              placeholder="First Name"
+            />
+            <TextInput
+              style={styles.input}
+              value={updatedLastName}
+              onChangeText={setUpdatedLastName}
+              placeholder="Last Name"
+            />
+            <TextInput
+              style={styles.input}
+              value={updatedFarmName}
+              onChangeText={setUpdatedFarmName}
+              placeholder="Farm Name"
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleUpdate}>
+                <Text style={styles.modalButtonText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -282,5 +353,64 @@ const styles = StyleSheet.create({
   sidebarButtonText: {
     color: '#fff',
     fontSize: 18,
+  },
+  sidebarHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  accountButton: {
+    backgroundColor: '#869F77',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginTop: 30
+  },
+  accountButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  input: {
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    marginBottom: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#869F77',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginHorizontal: 5,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
