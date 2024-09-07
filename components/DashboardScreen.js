@@ -1,23 +1,25 @@
+// DashboardScreen.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Image,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-  TouchableWithoutFeedback,
-  Alert,
   FlatList,
   Modal,
   TextInput,
+  TouchableOpacity,
+  Animated,
+  Alert,
+  TouchableWithoutFeedback,
+  Dimensions,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { collection, query, onSnapshot, updateDoc, doc } from 'firebase/firestore';
-import { firestore, auth } from '../firebase/config2'; // Adjust the import to include auth
+import { firestore, auth } from '../firebase/config2';
+import FooterScreen from './footer/FooterScreen'; // Import FooterScreen component
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -141,32 +143,13 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           />
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.footerItem}>
-            <Image source={require('../assets/images/navigation/home.png')} style={styles.footerImage} />
-            <Text style={styles.footerText}>Home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.footerItem}>
-            <Image source={require('../assets/images/navigation/transaction.png')} style={styles.footerImage} />
-            <Text style={styles.footerText}>Transaction</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.footerItem}>
-            <Image source={require('../assets/images/navigation/plus.png')} style={styles.footerImage} />
-            <Text style={styles.footerText}>Plus</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.footerItem}
-            onPress={() => navigation.navigate('ContactScreen', { firstName, lastName, farmName })}
-          >
-            <Image source={require('../assets/images/navigation/contact.png')} style={styles.footerImage} />
-            <Text style={styles.footerText}>Contact</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.footerItem} onPress={toggleSidebar}>
-            <Image source={require('../assets/images/navigation/menu.png')} style={styles.footerImage} />
-            <Text style={styles.footerText}>Menu</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Use the FooterScreen component */}
+        <FooterScreen
+          firstName={firstName}
+          lastName={lastName}
+          farmName={farmName}
+          toggleSidebar={toggleSidebar}
+        />
 
         {/* Sidebar */}
         <TouchableWithoutFeedback onPress={closeSidebar}>
@@ -195,28 +178,28 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Edit Farm Information</Text>
-              <Text style={styles.modalLabel}>First Name</Text>
-              <TextInput
-                style={styles.input}
-                value={updatedFirstName}
-                onChangeText={setUpdatedFirstName}
-                placeholder="First Name"
-              />
-              <Text style={styles.modalLabel}>Last Name</Text>
-              <TextInput
-                style={styles.input}
-                value={updatedLastName}
-                onChangeText={setUpdatedLastName}
-                placeholder="Last Name"
-              />
-              <Text style={styles.modalLabel}>Farm Name</Text>
-              <TextInput
-                style={styles.input}
-                value={updatedFarmName}
-                onChangeText={setUpdatedFarmName}
-                placeholder="Farm Name"
-              />
+            <Text style={styles.modalTitle}>Edit Farm Information</Text>
+            <Text style={styles.modalLabel}>First Name</Text>
+            <TextInput
+              style={styles.input}
+              value={updatedFirstName}
+              onChangeText={setUpdatedFirstName}
+              placeholder="First Name"
+            />
+            <Text style={styles.modalLabel}>Last Name</Text>
+            <TextInput
+              style={styles.input}
+              value={updatedLastName}
+              onChangeText={setUpdatedLastName}
+              placeholder="Last Name"
+            />
+            <Text style={styles.modalLabel}>Farm Name</Text>
+            <TextInput
+              style={styles.input}
+              value={updatedFarmName}
+              onChangeText={setUpdatedFarmName}
+              placeholder="Farm Name"
+            />
 
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalButton} onPress={handleUpdate}>
@@ -294,24 +277,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 15,
-    backgroundColor: '#fff',
-    zIndex: 3,
-  },
-  footerItem: {
-    alignItems: 'center',
-  },
-  footerImage: {
-    width: 24,
-    height: 24,
-  },
-  footerText: {
-    fontSize: 12,
-    marginTop: 5,
-  },
   sidebarOverlay: {
     position: 'absolute',
     top: 0,
@@ -369,7 +334,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 5,
-    marginTop: 43
+    marginTop: 43,
   },
   accountButtonText: {
     color: '#fff',
@@ -422,6 +387,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     alignSelf: 'flex-start',
     marginBottom: 5,
-  }
-  
+  },
 });

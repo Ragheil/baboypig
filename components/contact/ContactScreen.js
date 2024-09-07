@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, FlatList, TouchableOpacity, Alert, Linking, Modal, Image } from 'react-native';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { auth, firestore } from '../firebase/config2'; // Adjust the path as needed
+import { auth, firestore } from '../../firebase/config2'; // Adjust the path as needed
 import { Swipeable } from 'react-native-gesture-handler';
 
 const ContactScreen = ({ navigation }) => {
@@ -179,7 +179,7 @@ const ContactScreen = ({ navigation }) => {
                 <View style={styles.actions}>
                   <TouchableOpacity onPress={() => handlePhoneCall(item.contactNumber)}>
                     <Image
-                      source={require('../assets/contacts/contactIcon.png')}
+                      source={require('../../assets/images/contacts/contactIcon.png')}
                       style={styles.actionIcon}
                     />
                   </TouchableOpacity>
@@ -258,7 +258,7 @@ const ContactScreen = ({ navigation }) => {
                 <Button title="Close" onPress={closeViewModal} color="#007BFF" />
                 <TouchableOpacity onPress={() => startEditContact(selectedContact)}>
                   <Image
-                    source={require('../assets/contacts/editIcon.png')}
+                    source={require('../../assets/contacts/editIcon.png')}
                     style={styles.actionIcon}
                   />
                 </TouchableOpacity>

@@ -1,3 +1,4 @@
+// App.js
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -11,9 +12,9 @@ import LoginScreen from './components/authentication/LoginScreen';
 import RegisterScreen from './components/authentication/RegisterScreen';
 import DashboardScreen from './components/DashboardScreen';
 import FarmNameScreen from './components/FarmNameScreen';
-import ContactScreen from './components/ContactScreen';
-import PigGroupsScreen from './components/PigGroupsScreen';
-import AddPigInfoScreen from './components/AddPigInfoScreen'; // Import AddPigInfoScreen
+import ContactScreen from './components/contact/ContactScreen';
+import PigGroupsScreen from './components/pigGroup/PigGroupsScreen';
+import AddPigInfoScreen from './components/pigGroup/AddPigInfoScreen';
 
 import { auth, firestore } from './firebase/config2';
 

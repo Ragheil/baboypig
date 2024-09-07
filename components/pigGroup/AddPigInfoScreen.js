@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, Modal, TouchableOpacity, Image } from 'react-native';
 import { addDoc, collection, query, onSnapshot, doc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
-import { auth, firestore } from '../firebase/config2'; // Adjust the path as needed
+import { auth, firestore } from '../../firebase/config2'; // Adjust the path as needed
 import { Picker } from '@react-native-picker/picker';
-import deleteIcon from '../assets/images/buttons/deleteIcon.png';
-import editIcon from '../assets/images/buttons/editIcon.png';
-import viewIcon from '../assets/images/buttons/viewIcon.png';
+import deleteIcon from '../../assets/images/buttons/deleteIcon.png';
+import editIcon from '../../assets/images/buttons/editIcon.png';
+import viewIcon from '../../assets/images/buttons/viewIcon.png';
 
 export default function AddPigInfoScreen({ route }) {
   const { pigGroupId, userId } = route.params;

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where } from 'firebase/firestore';
-import { auth, firestore } from '../firebase/config2'; // Adjust the path as needed
+import { auth, firestore } from '../../firebase/config2'; // Adjust the path as needed
 import Modal from 'react-native-modal'; // Ensure this import is present for the modal library
 
 // Import your icons
-import editIcon from '../assets/images/buttons/editIcon.png'; // Adjust the path as needed
-import deleteIcon from '../assets/images/buttons/deleteIcon.png'; // Adjust the path as needed
+import editIcon from '../../assets/images/buttons/editIcon.png'; // Adjust the path as needed
+import deleteIcon from '../../assets/images/buttons/deleteIcon.png'; // Adjust the path as needed
 
 const PigGroupsScreen = ({ navigation }) => {
   const [pigGroups, setPigGroups] = useState([]);
