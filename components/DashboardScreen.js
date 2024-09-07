@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   sidebarHeader: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 1,
     marginTop: 60,
   },
   sidebarDivider: {
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 5,
-    marginTop: 43,
+    marginTop: 60,
   },
   accountButtonText: {
     color: '#fff',
