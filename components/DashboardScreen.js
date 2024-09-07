@@ -12,26 +12,32 @@ import {
   Alert,
   TouchableWithoutFeedback,
   Dimensions,
-  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, doc, addDoc } from 'firebase/firestore';
 import { firestore, auth } from '../firebase/config2';
-import FooterScreen from './footer/FooterScreen'; // Import FooterScreen component
-
+import FooterScreen from './footer/FooterScreen';
+// Import Picker if using built-in Picker
+import { Picker } from '@react-native-picker/picker'; 
+// Or react-native-picker-select for more customization
+// import RNPickerSelect from 'react-native-picker-select';
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pigGroups, setPigGroups] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [branchModalVisible, setBranchModalVisible] = useState(false); // Modal for adding branch
   const [updatedFirstName, setUpdatedFirstName] = useState(firstName);
   const [updatedLastName, setUpdatedLastName] = useState(lastName);
   const [updatedFarmName, setUpdatedFarmName] = useState(farmName);
   const [currentFirstName, setCurrentFirstName] = useState(firstName);
   const [currentLastName, setCurrentLastName] = useState(lastName);
   const [currentFarmName, setCurrentFarmName] = useState(farmName);
+  const [newBranchName, setNewBranchName] = useState(''); // New branch name state
+  const [branches, setBranches] = useState([]); // State to store farm branches
+  const [selectedBranch, setSelectedBranch] = useState(''); // State to store selected branch
   const sidebarTranslateX = useState(new Animated.Value(Dimensions.get('window').width))[0];
   const navigation = useNavigation();
   const user = auth.currentUser;
@@ -56,6 +62,22 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     setCurrentLastName(updatedLastName);
     setCurrentFarmName(updatedFarmName);
   }, [updatedFirstName, updatedLastName, updatedFarmName]);
+
+  // Fetch farm branches
+  useEffect(() => {
+    if (user) {
+      const q = query(collection(firestore, `users/${user.uid}/farmBranches`));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const branchList = [];
+        snapshot.forEach((doc) => {
+          branchList.push({ id: doc.id, ...doc.data() });
+        });
+        setBranches(branchList);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [user]);
 
   const toggleSidebar = () => {
     Animated.timing(sidebarTranslateX, {
@@ -101,6 +123,16 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     }
   };
 
+  const handleAddBranch = async () => {
+    if (user && newBranchName.trim()) {
+      await addDoc(collection(firestore, `users/${user.uid}/farmBranches`), {
+        name: newBranchName.trim(),
+      });
+      setNewBranchName('');
+      setBranchModalVisible(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -110,17 +142,12 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         <View style={styles.contentContainer}>
           <Text style={styles.title}>Pig Groups Summary</Text>
 
-          {/* Conditionally Render the See All Button */}
-          {!sidebarVisible && (
-            <TouchableOpacity
-              style={styles.seeAllButton}
-              onPress={() => {
-                navigation.navigate('PigGroups');
-              }}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+  style={[styles.seeAllButton, { zIndex: 10, elevation: 5 }]} // Ensure the button is clickable
+  onPress={() => navigation.navigate('PigGroups')} // Navigates to PigGroupScreen
+>
+  <Text style={styles.seeAllText}>See All</Text>
+</TouchableOpacity>
 
           <FlatList
             data={pigGroups}
@@ -144,7 +171,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           />
         </View>
 
-        {/* Use the FooterScreen component */}
+        {/* Footer */}
         <FooterScreen
           firstName={firstName}
           lastName={lastName}
@@ -165,13 +192,30 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           </View>
           <Divider style={styles.sidebarDivider} />
           <Text style={styles.sidebarText}>Farm: {currentFarmName}</Text>
+
+          {/* Add Branch Button */}
+          <TouchableOpacity style={styles.addBranchButton} onPress={() => setBranchModalVisible(true)}>
+            <Text style={styles.addBranchButtonText}>Add Branch</Text>
+          </TouchableOpacity>
+
+          {/* Pull-down Menu for Farm Branches */}
+          <Picker
+            selectedValue={selectedBranch}
+            onValueChange={(itemValue) => setSelectedBranch(itemValue)}
+            style={styles.picker} // Add your styles here
+          >
+            <Picker.Item label="Select a Branch" value="" />
+            {branches.map((branch) => (
+              <Picker.Item key={branch.id} label={branch.name} value={branch.name} />
+            ))}
+          </Picker>
+
           <TouchableOpacity style={styles.sidebarButton} onPress={confirmLogout}>
             <Text style={styles.sidebarButtonText}>Logout</Text>
           </TouchableOpacity>
         </Animated.View>
       </LinearGradient>
-
-      {/* Edit Modal */}
+      {/* Edit Account Modal */}
       <Modal
         transparent={true}
         visible={modalVisible}
@@ -180,33 +224,56 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Edit Farm Information</Text>
-            <Text style={styles.modalLabel}>First Name</Text>
             <TextInput
               style={styles.input}
               value={updatedFirstName}
               onChangeText={setUpdatedFirstName}
               placeholder="First Name"
             />
-            <Text style={styles.modalLabel}>Last Name</Text>
             <TextInput
               style={styles.input}
               value={updatedLastName}
               onChangeText={setUpdatedLastName}
               placeholder="Last Name"
             />
-            <Text style={styles.modalLabel}>Farm Name</Text>
             <TextInput
               style={styles.input}
               value={updatedFarmName}
               onChangeText={setUpdatedFarmName}
               placeholder="Farm Name"
             />
-
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalButton} onPress={handleUpdate}>
                 <Text style={styles.modalButtonText}>Save</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add Branch Modal */}
+      <Modal
+        transparent={true}
+        visible={branchModalVisible}
+        onRequestClose={() => setBranchModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add New Branch</Text>
+            <TextInput
+              style={styles.input}
+              value={newBranchName}
+              onChangeText={setNewBranchName}
+              placeholder="Branch Name"
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleAddBranch}>
+                <Text style={styles.modalButtonText}>Add</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalButton} onPress={() => setBranchModalVisible(false)}>
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -271,8 +338,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#869F77',
     borderRadius: 5,
     alignItems: 'center',
-    zIndex: 10,
-    elevation: 5,
+    zIndex: 1, // Lower the zIndex so it doesn't overlap the sidebar
+    elevation: 2, // Ensure it's clickable, but not higher than the sidebar
   },
   seeAllText: {
     color: '#fff',
@@ -295,8 +362,8 @@ const styles = StyleSheet.create({
     width: '80%',
     backgroundColor: '#fff',
     padding: 20,
-    zIndex: 2,
-    elevation: 3,
+    zIndex: 10, // Ensure the sidebar has the highest zIndex
+    elevation: 10, // Higher elevation to ensure it shows above other UI elements
   },
   sidebarHeader: {
     fontSize: 24,
@@ -388,5 +455,37 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     alignSelf: 'flex-start',
     marginBottom: 5,
+  },
+  addBranchButton: {
+    backgroundColor: '#869F77',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginTop: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+    
+  },
+  addBranchButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    color: '#333',
+  },
+  seeAllButton: {
+    backgroundColor: '#588061',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  seeAllText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

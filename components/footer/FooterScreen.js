@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: 15,
     backgroundColor: '#fff',
-    zIndex: 3,
+    zIndex: 11,
   },
   footerItem: {
     alignItems: 'center',
