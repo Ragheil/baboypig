@@ -258,7 +258,7 @@ const ContactScreen = ({ navigation }) => {
                 <Button title="Close" onPress={closeViewModal} color="#007BFF" />
                 <TouchableOpacity onPress={() => startEditContact(selectedContact)}>
                   <Image
-                    source={require('../../assets/contacts/editIcon.png')}
+                    source={require('../../assets/images/contacts/editIcon.png')}
                     style={styles.actionIcon}
                   />
                 </TouchableOpacity>
