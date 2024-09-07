@@ -21,6 +21,7 @@ import { collection, query, onSnapshot, updateDoc, doc } from 'firebase/firestor
 import { firestore, auth } from '../firebase/config2';
 import FooterScreen from './footer/FooterScreen'; // Import FooterScreen component
 
+
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pigGroups, setPigGroups] = useState([]);
