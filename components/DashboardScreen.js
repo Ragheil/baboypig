@@ -19,10 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { collection, query, onSnapshot, updateDoc, doc, addDoc } from 'firebase/firestore';
 import { firestore, auth } from '../firebase/config2';
 import FooterScreen from './footer/FooterScreen';
-// Import Picker if using built-in Picker
-import { Picker } from '@react-native-picker/picker'; 
-// Or react-native-picker-select for more customization
-// import RNPickerSelect from 'react-native-picker-select';
+import { Picker } from '@react-native-picker/picker';
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -133,6 +130,28 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     }
   };
 
+  const getPigCount = (pigGroupId) => {
+    // Fetch the pig count for a specific pig group
+    if (user) {
+      const q = query(collection(firestore, `users/${user.uid}/pigGroups/${pigGroupId}/pigs`));
+      onSnapshot(q, (snapshot) => {
+        let count = 0;
+        snapshot.forEach(() => count++);
+        // Update the pig group with the new pig count
+        setPigGroups((prevGroups) =>
+          prevGroups.map((group) =>
+            group.id === pigGroupId ? { ...group, pigCount: count } : group
+          )
+        );
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Fetch the pig count for each pig group on initial load
+    pigGroups.forEach((group) => getPigCount(group.id));
+  }, [pigGroups]);
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -143,11 +162,11 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           <Text style={styles.title}>Pig Groups Summary</Text>
 
           <TouchableOpacity
-  style={[styles.seeAllButton, { zIndex: 10, elevation: 5 }]} // Ensure the button is clickable
-  onPress={() => navigation.navigate('PigGroups')} // Navigates to PigGroupScreen
->
-  <Text style={styles.seeAllText}>See All</Text>
-</TouchableOpacity>
+            style={[styles.seeAllButton, { zIndex: 10, elevation: 5 }]} // Ensure the button is clickable
+            onPress={() => navigation.navigate('PigGroups')} // Navigates to PigGroupScreen
+          >
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
 
           <FlatList
             data={pigGroups}
@@ -155,7 +174,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
               <View style={styles.pigGroupSummary}>
                 <Text style={styles.pigGroupText}>{item.name}</Text>
                 <Text style={styles.pigCountText}>
-                  <Text style={styles.boldText}>{item.pigCount || 0} Pigs</Text>
+                  <Text style={styles.boldText}> {item.pigCount || 0} Pigs</Text>
                 </Text>
               </View>
             )}
@@ -215,7 +234,8 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           </TouchableOpacity>
         </Animated.View>
       </LinearGradient>
-      {/* Edit Account Modal */}
+
+      {/* Edit Modal */}
       <Modal
         transparent={true}
         visible={modalVisible}
@@ -223,7 +243,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Farm Information</Text>
+            <Text style={styles.modalTitle}>Edit Account</Text>
             <TextInput
               style={styles.input}
               value={updatedFirstName}
@@ -242,14 +262,12 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
               onChangeText={setUpdatedFarmName}
               placeholder="Farm Name"
             />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalButton} onPress={handleUpdate}>
-                <Text style={styles.modalButtonText}>Save</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.saveButton} onPress={handleUpdate}>
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -269,14 +287,12 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
               onChangeText={setNewBranchName}
               placeholder="Branch Name"
             />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalButton} onPress={handleAddBranch}>
-                <Text style={styles.modalButtonText}>Add</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={() => setBranchModalVisible(false)}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.saveButton} onPress={handleAddBranch}>
+              <Text style={styles.saveButtonText}>Add</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setBranchModalVisible(false)}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
