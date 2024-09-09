@@ -155,7 +155,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
               <View style={styles.pigGroupSummary}>
                 <Text style={styles.pigGroupText}>{item.name}</Text>
                 <Text style={styles.pigCountText}>
-                  <Text style={styles.boldText}>{item.pigCount || 0} Pigs</Text>
+                  <Text style={styles.boldText}>{/* Modal for confirming deletion {item.pigCount || 0} Pigs*/} </Text>
                 </Text>
               </View>
             )}
