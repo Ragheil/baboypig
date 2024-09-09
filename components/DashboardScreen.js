@@ -1,4 +1,4 @@
-// DashboardScreen.js
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -13,49 +13,65 @@ import {
   TouchableWithoutFeedback,
   Dimensions,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { collection, query, onSnapshot, updateDoc, doc, addDoc } from 'firebase/firestore';
 import { firestore, auth } from '../firebase/config2';
 import FooterScreen from './footer/FooterScreen';
-// Import Picker if using built-in Picker
 import { Picker } from '@react-native-picker/picker'; 
-// Or react-native-picker-select for more customization
-// import RNPickerSelect from 'react-native-picker-select';
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pigGroups, setPigGroups] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [branchModalVisible, setBranchModalVisible] = useState(false); // Modal for adding branch
+  const [branchModalVisible, setBranchModalVisible] = useState(false); 
   const [updatedFirstName, setUpdatedFirstName] = useState(firstName);
   const [updatedLastName, setUpdatedLastName] = useState(lastName);
   const [updatedFarmName, setUpdatedFarmName] = useState(farmName);
   const [currentFirstName, setCurrentFirstName] = useState(firstName);
   const [currentLastName, setCurrentLastName] = useState(lastName);
   const [currentFarmName, setCurrentFarmName] = useState(farmName);
-  const [newBranchName, setNewBranchName] = useState(''); // New branch name state
-  const [branches, setBranches] = useState([]); // State to store farm branches
-  const [selectedBranch, setSelectedBranch] = useState(''); // State to store selected branch
+  const [newBranchName, setNewBranchName] = useState(''); 
+  const [branches, setBranches] = useState([]); 
+  const [selectedBranch, setSelectedBranch] = useState(farmName); 
   const sidebarTranslateX = useState(new Animated.Value(Dimensions.get('window').width))[0];
   const navigation = useNavigation();
   const user = auth.currentUser;
 
   useEffect(() => {
     if (user) {
-      const q = query(collection(firestore, `users/${user.uid}/pigGroups`));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const groups = [];
-        snapshot.forEach((doc) => {
-          groups.push({ id: doc.id, ...doc.data() });
+      const userDocRef = doc(firestore, `users/${user.uid}`);
+      const unsubscribeUserDoc = onSnapshot(userDocRef, (doc) => {
+       const userData = doc.data();
+        const farmName = userData?.farmName || '';
+        
+        setCurrentFarmName(farmName);
+        setSelectedBranch(farmName); // Set the initial selected branch to farm name
+  
+        const q = query(collection(firestore, `users/${user.uid}/farmBranches`));
+        const unsubscribeFarmBranches = onSnapshot(q, (snapshot) => {
+          const branchList = [];
+          snapshot.forEach((doc) => {
+            branchList.push({ id: doc.id, ...doc.data() });
+          });
+          // Add the farm name as the first item in the branch list
+          setBranches([ 
+            { id: 'farmName', name: `Main Farm: ${farmName}` }, // Label with "Main Farm"
+            ...branchList 
+          ]);
         });
-        setPigGroups(groups);
+  
+        return () => {
+          unsubscribeFarmBranches();
+          unsubscribeUserDoc();
+        };
       });
-
-      return () => unsubscribe();
     }
-  }, [user]);
+  }, [user]); 
+  
+
 
   useEffect(() => {
     setCurrentFirstName(updatedFirstName);
@@ -133,6 +149,38 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     }
   };
 
+  // Handle branch switch
+  const handleBranchSwitch = (branchName) => {
+    if (branchName !== selectedBranch) {
+      Alert.alert(
+        "Switch Branch",
+        `Do you want to switch to the ${branchName} branch?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: () => {
+              setSelectedBranch(branchName);
+              setCurrentFarmName(branchName);
+              console.log(`Switched to ${branchName} branch.`);
+              navigation.navigate('Dashboard', {
+                firstName: updatedFirstName,
+                lastName: updatedLastName,
+                farmName: branchName,
+              });
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    }
+  };
+  
+  
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -143,11 +191,11 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           <Text style={styles.title}>Pig Groups Summary</Text>
 
           <TouchableOpacity
-  style={[styles.seeAllButton, { zIndex: 10, elevation: 5 }]} // Ensure the button is clickable
-  onPress={() => navigation.navigate('PigGroups')} // Navigates to PigGroupScreen
->
-  <Text style={styles.seeAllText}>See All</Text>
-</TouchableOpacity>
+            style={[styles.seeAllButton, { zIndex: 10, elevation: 5 }]}
+            onPress={() => navigation.navigate('PigGroups')}
+          >
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
 
           <FlatList
             data={pigGroups}
@@ -155,7 +203,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
               <View style={styles.pigGroupSummary}>
                 <Text style={styles.pigGroupText}>{item.name}</Text>
                 <Text style={styles.pigCountText}>
-                  <Text style={styles.boldText}>{/* Modal for confirming deletion {item.pigCount || 0} Pigs*/} </Text>
+                  <Text style={styles.boldText}>{/* {item.pigCount || 0} Pigs */}</Text>
                 </Text>
               </View>
             )}
@@ -171,7 +219,6 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           />
         </View>
 
-        {/* Footer */}
         <FooterScreen
           firstName={firstName}
           lastName={lastName}
@@ -179,7 +226,6 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           toggleSidebar={toggleSidebar}
         />
 
-        {/* Sidebar */}
         <TouchableWithoutFeedback onPress={closeSidebar}>
           <Animated.View style={[styles.sidebarOverlay, { opacity: sidebarVisible ? 0.5 : 0 }]} />
         </TouchableWithoutFeedback>
@@ -198,17 +244,18 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             <Text style={styles.addBranchButtonText}>Add Branch</Text>
           </TouchableOpacity>
 
-          {/* Pull-down Menu for Farm Branches */}
+          {/* Branch Picker */}
           <Picker
-            selectedValue={selectedBranch}
-            onValueChange={(itemValue) => setSelectedBranch(itemValue)}
-            style={styles.picker} // Add your styles here
-          >
-            <Picker.Item label="Select a Branch" value="" />
-            {branches.map((branch) => (
-              <Picker.Item key={branch.id} label={branch.name} value={branch.name} />
-            ))}
-          </Picker>
+  selectedValue={selectedBranch}
+  onValueChange={handleBranchSwitch}
+  style={styles.picker}
+>
+  <Picker.Item label="Select a Branch" value="" />
+  {branches.map((branch) => (
+    <Picker.Item key={branch.id} label={branch.name} value={branch.name} />
+  ))}
+</Picker>
+
 
           <TouchableOpacity style={styles.sidebarButton} onPress={confirmLogout}>
             <Text style={styles.sidebarButtonText}>Logout</Text>
