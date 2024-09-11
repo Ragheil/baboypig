@@ -20,13 +20,11 @@ const LoginScreen = ({ email, setEmail, password, setPassword, handleAuthenticat
       await signInWithEmailAndPassword(auth, email, password);
       handleAuthentication();
     } catch (error) {
-      // Handle specific Firebase errors with custom messages
+      // If the error is related to invalid credentials
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
         Alert.alert('Error', 'This account is not registered yet');
-      } else if (error.code === 'auth/wrong-password') {
-        Alert.alert('Error', 'Incorrect password. Please try again.');
       } else {
-        Alert.alert('Error', 'This account is not registered yet');
+        Alert.alert('Error', error.message);
       }
     }
   };
