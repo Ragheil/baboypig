@@ -11,11 +11,32 @@ const RegisterScreen = ({ email, setEmail, password, setPassword, handleAuthenti
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [retypePasswordVisible, setRetypePasswordVisible] = useState(false);
 
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
   const handleRegister = () => {
-    if (password !== retypePassword) {
-      Alert.alert("Passwords don't match!");
+    if (!email || !password || !retypePassword || !firstName || !lastName) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
+
+    if (!validateEmail(email)) {
+      Alert.alert('Error', 'Invalid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+
+    if (password !== retypePassword) {
+      Alert.alert("Error", "Passwords don't match!");
+      return;
+    }
+
     handleAuthentication(firstName, lastName);
   };
 
