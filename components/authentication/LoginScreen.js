@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../firebase/config2'; // Import auth here
 
 const { width } = Dimensions.get('window');
@@ -10,22 +10,11 @@ const LoginScreen = ({ email, setEmail, password, setPassword, handleAuthenticat
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
-      return;
-    }
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
+    } else {
       handleAuthentication();
-    } catch (error) {
-      // If the error is related to invalid credentials
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
-        Alert.alert('Error', 'This account is not registered yet');
-      } else {
-        Alert.alert('Error', error.message);
-      }
     }
   };
 

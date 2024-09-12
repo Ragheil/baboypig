@@ -27,6 +27,7 @@
     "expo-secure-store": "^13.0.2",
     "expo-status-bar": "~1.12.1",
     "firebase": "^10.12.5",
+    "ngrok": "^5.0.0-beta.2",
     "react": "18.2.0",
     "react-native": "^0.74.5",
     "react-native-elements": "^3.4.3",
