@@ -164,11 +164,6 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
               setSelectedBranch(branchName);
               setCurrentFarmName(branchName);
               console.log(`Switched to ${branchName} branch.`);
-              navigation.navigate('Dashboard', {
-                firstName: updatedFirstName,
-                lastName: updatedLastName,
-                farmName: branchName,
-              });
             },
           },
         ],
@@ -176,6 +171,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       );
     }
   };
+  
 
   return (
     <View style={styles.container}>
@@ -187,11 +183,13 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           <Text style={styles.title}>Pig Groups Summary</Text>
 
           <TouchableOpacity
-            style={[styles.seeAllButton, { zIndex: 10, elevation: 5 }]}
-            onPress={() => navigation.navigate('PigGroups')}
-          >
-            <Text style={styles.seeAllText}>See All</Text>
-          </TouchableOpacity>
+  style={[styles.seeAllButton, { zIndex: 10, elevation: 5 }]}
+  onPress={() => navigation.navigate('PigGroups', {
+    selectedBranch: selectedBranch === `Main Farm: ${farmName}` ? 'main' : selectedBranch,
+  })}
+>
+  <Text style={styles.seeAllText}>See All</Text>
+</TouchableOpacity>
 
           <FlatList
             data={pigGroups}
