@@ -7,6 +7,7 @@ import deleteIcon from '../../assets/images/buttons/deleteIcon.png';
 import editIcon from '../../assets/images/buttons/editIcon.png';
 import viewIcon from '../../assets/images/buttons/viewIcon.png';
 import styles from '../../frontend/pigGroupStyles/AddPigInfoScreenStyles'; // Importing the separated styles
+ 
 
 export default function AddPigInfoScreen({ route }) {
   const { pigGroupId, userId } = route.params;
