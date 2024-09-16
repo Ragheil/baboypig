@@ -96,45 +96,46 @@ const PigGroupsScreen = ({ navigation, route }) => {
 
   const addOrUpdatePigGroup = async () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Name is required!');
-      return;
+        Alert.alert('Validation Error', 'Name is required!');
+        return;
     }
 
     const isDuplicate = await isPigGroupNameDuplicate(name);
     if (isDuplicate && (!editPigGroupId || pigGroups.find(group => group.name === name)?.id !== editPigGroupId)) {
-      Alert.alert('Duplicate Pig Group', 'A pig group with this name already exists. Please try another name.');
-      return;
+        Alert.alert('Duplicate Pig Group', 'A pig group with this name already exists. Please try another name.');
+        return;
     }
 
     try {
-      if (!user) return;
+        if (!user) return;
 
-      let pigGroupsPath;
-      if (selectedBranch === 'main') {
-        pigGroupsPath = `users/${user.uid}/pigGroups`;
-      } else {
-        pigGroupsPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`;
-      }
+        // Use the document ID of the selected branch, not the branch name
+        let pigGroupsPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`;
 
-      if (editPigGroupId) {
-        await updateDoc(doc(firestore, pigGroupsPath, editPigGroupId), {
-          name,
-        });
-        console.log('Pig group updated:', name); // Log update
-        setEditPigGroupId(null); // Reset edit mode
-      } else {
-        await addDoc(collection(firestore, pigGroupsPath), {
-          name,
-        });
-        console.log('Pig group added:', name); // Log addition
-      }
+        if (editPigGroupId) {
+            // Update existing pig group
+            await updateDoc(doc(firestore, pigGroupsPath, editPigGroupId), {
+                name,
+            });
+            console.log('Pig group updated:', name);
+            setEditPigGroupId(null); // Reset the edit ID
+        } else {
+            // Add a new pig group
+            await addDoc(collection(firestore, pigGroupsPath), {
+                name,
+            });
+            console.log('Pig group added:', name);
+        }
 
-      setName('');
-      setIsAddEditModalVisible(false); // Close the modal after saving
+        // Clear the input and close modal after the operation
+        setName('');
+        setIsAddEditModalVisible(false);
     } catch (error) {
-      console.error('Error adding/updating pig group:', error);
+        console.error('Error adding/updating pig group:', error);
     }
-  };
+};
+
+
 
   const confirmDeletePigGroup = (pigGroup) => {
     setCurrentPigGroupName(pigGroup.name);
