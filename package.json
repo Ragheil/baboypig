@@ -29,6 +29,7 @@
     "firebase": "^10.12.5",
     "ngrok": "^5.0.0-beta.2",
     "react": "18.2.0",
+    "react-firebase-hooks": "^5.1.1",
     "react-native": "^0.74.5",
     "react-native-elements": "^3.4.3",
     "react-native-gesture-handler": "~2.16.1",
