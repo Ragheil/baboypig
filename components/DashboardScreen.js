@@ -240,7 +240,8 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             </TouchableOpacity>
           </View>
           <Divider style={styles.sidebarDivider} />
-          <Text style={styles.sidebarText}>Farm: {currentFarmName}</Text>
+          <Text style={styles.sidebarText}> Farm: <Text style={{ fontWeight: 'bold' }}>{currentFarmName}</Text> </Text>
+
 
           {/* Branch Picker */}
           <Picker

@@ -192,6 +192,9 @@ const styles = StyleSheet.create({
     width: '100%',
     color: '#333',
   },
+  boldText: {
+    fontWeight: 'bold',
+  },
 });
 
 export default styles;
