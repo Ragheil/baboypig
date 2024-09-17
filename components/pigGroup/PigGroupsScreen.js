@@ -47,6 +47,7 @@ const PigGroupsScreen = ({ navigation }) => {
       const userPigGroupsCollection = collection(firestore, selectedBranch && selectedBranch !== 'main'
         ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`
         : `users/${user.uid}/pigGroups`);
+      
   
       let q = query(userPigGroupsCollection, orderBy('name'));
   
