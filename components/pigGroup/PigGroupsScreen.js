@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where, getDoc } from 'firebase/firestore';
 import { auth, firestore } from '../../firebase/config2'; // Adjust the path as needed
 import Modal from 'react-native-modal'; // Ensure this import is present for the modal library
 import { useRoute } from '@react-navigation/native';
@@ -42,20 +42,18 @@ const PigGroupsScreen = ({ navigation }) => {
 
   const fetchPigGroups = async () => {
     try {
-      if (!user) return;
+      if (!user || !selectedBranch) return;
   
-      const userPigGroupsCollection = collection(firestore, selectedBranch && selectedBranch !== 'main'
-        ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`
-        : `users/${user.uid}/pigGroups`);
+      // Fetch pig groups for the selected branch, including "test main farm"
+      const pigGroupsCollection = collection(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`);
       
-  
-      let q = query(userPigGroupsCollection, orderBy('name'));
+      const q = query(pigGroupsCollection, orderBy('name'));
   
       const querySnapshot = await getDocs(q);
   
       const pigGroupsList = await Promise.all(querySnapshot.docs.map(async doc => {
         const pigGroupId = doc.id;
-        const pigsCollection = collection(firestore, `users/${user.uid}/pigGroups/${pigGroupId}/pigs`);
+        const pigsCollection = collection(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`);
         const pigsSnapshot = await getDocs(pigsCollection);
         const pigCount = pigsSnapshot.size;
   
@@ -73,6 +71,9 @@ const PigGroupsScreen = ({ navigation }) => {
   };
   
   
+  
+  
+  
 
   const isPigGroupNameDuplicate = async (name) => {
     if (!user) return false;
@@ -87,41 +88,35 @@ const PigGroupsScreen = ({ navigation }) => {
       return false;
     }
   };
-
   const addOrUpdatePigGroup = async () => {
     if (!name.trim()) {
       Alert.alert('Validation Error', 'Name is required!');
       return;
     }
   
-    // Check for duplicate name
-    const isDuplicate = await isPigGroupNameDuplicate(name);
-    if (isDuplicate && (!editPigGroupId || pigGroups.find(group => group.name === name)?.id !== editPigGroupId)) {
-      Alert.alert('Duplicate Pig Group', 'A pig group with this name already exists. Please try another name.');
-      return;
-    }
-  
     try {
-      if (!user) return;
+      if (!user || !selectedBranch) return;
   
-      // Determine the collection path based on the selected branch
-      const collectionPath = selectedBranch && selectedBranch !== 'main'
-        ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`
-        : `users/${user.uid}/pigGroups`;
+      // Ensure the selected branch exists
+      const branchDoc = doc(firestore, `users/${user.uid}/farmBranches/${selectedBranch}`);
+      const branchDocSnapshot = await getDoc(branchDoc);
   
+      if (!branchDocSnapshot.exists()) {
+        Alert.alert('Error', `The branch "${selectedBranch}" does not exist.`);
+        return;
+      }
+  
+      // Path to pig groups within the selected branch
+      const collectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`;
       const pigGroupsCollection = collection(firestore, collectionPath);
   
       if (editPigGroupId) {
-        await updateDoc(doc(firestore, collectionPath, editPigGroupId), {
-          name,
-        });
-        console.log('Pig group updated:', name); // Log update
+        await updateDoc(doc(firestore, collectionPath, editPigGroupId), { name });
+        console.log('Pig group updated:', name);
         setEditPigGroupId(null); // Reset edit mode
       } else {
-        await addDoc(pigGroupsCollection, {
-          name,
-        });
-        console.log('Pig group added:', name); // Log addition
+        await addDoc(pigGroupsCollection, { name });
+        console.log('Pig group added:', name);
       }
   
       setName('');

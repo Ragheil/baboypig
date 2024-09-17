@@ -7,9 +7,9 @@ import deleteIcon from '../../assets/images/buttons/deleteIcon.png';
 import editIcon from '../../assets/images/buttons/editIcon.png';
 import viewIcon from '../../assets/images/buttons/viewIcon.png';
 import styles from '../../frontend/pigGroupStyles/AddPigInfoScreenStyles'; // Importing the separated styles
- 
 
 export default function AddPigInfoScreen({ route }) {
+  
   const { pigGroupId, userId } = route.params;
   const [pigName, setPigName] = useState('');
   const [tagNumber, setTagNumber] = useState('');
@@ -23,32 +23,38 @@ export default function AddPigInfoScreen({ route }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedPig, setSelectedPig] = useState(null);
+  const [selectedBranch, setSelectedBranch] = useState(''); // Define selectedBranch
   const user = auth.currentUser;
 
   // Fetch Pig Group Name
-  useEffect(() => {
-    const fetchPigGroupName = async () => {
-      try {
-        const docRef = doc(firestore, `users/${user.uid}/pigGroups/${pigGroupId}`);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setPigGroupName(docSnap.data().name || '');
-        } else {
-          console.error('No such pig group!');
-        }
-      } catch (error) {
-        console.error('Error fetching pig group name:', error);
+  const fetchPigGroupName = async () => {
+    try {
+      const docRef = selectedBranch && selectedBranch !== 'main'
+        ? doc(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}`)
+        : doc(firestore, `users/${user.uid}/pigGroups/${pigGroupId}`);
+  
+      const docSnapshot = await getDoc(docRef);
+      if (docSnapshot.exists()) {
+        setPigGroupName(docSnapshot.data().name);
       }
-    };
-
+    } catch (error) {
+      console.error('Error fetching pig group name:', error);
+    }
+  };
+  
+  useEffect(() => {
     fetchPigGroupName();
-  }, [pigGroupId, user.uid]);
+}, [pigGroupId, user.uid]);
 
   // Fetch Pigs
   useEffect(() => {
     const fetchPigs = async () => {
       try {
-        const q = query(collection(firestore, `users/${user.uid}/pigGroups/${pigGroupId}/pigs`));
+        const pigsCollectionPath = selectedBranch && selectedBranch !== 'main'
+          ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`
+          : `users/${user.uid}/pigGroups/${pigGroupId}/pigs`;
+  
+        const q = query(collection(firestore, pigsCollectionPath));
         const unsubscribe = onSnapshot(q, (snapshot) => {
           if (snapshot.empty) {
             setPigs([]);
@@ -59,21 +65,30 @@ export default function AddPigInfoScreen({ route }) {
         }, (error) => {
           console.error('Error fetching pigs:', error);
         });
-
+  
         return () => unsubscribe();
       } catch (error) {
         console.error('Error fetching pigs:', error);
       }
     };
-
+  
     fetchPigs();
-  }, [pigGroupId, user.uid]);
+  }, [pigGroupId, user.uid, selectedBranch]);
+  
 
   // Check for Duplicates
   const checkForDuplicates = async () => {
     try {
-      const q = query(collection(firestore, `users/${user.uid}/pigGroups/${pigGroupId}/pigs`));
+      // Build the path dynamically, handling the "main" case
+      const pigCollectionPath = selectedBranch && selectedBranch !== 'main'
+        ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`
+        : `users/${user.uid}/pigGroups/${pigGroupId}/pigs`;
+  
+      console.log('Checking for duplicates in:', pigCollectionPath); // Debugging log
+  
+      const q = query(collection(firestore, pigCollectionPath));
       const querySnapshot = await getDocs(q);
+  
       return querySnapshot.docs.some(doc => {
         const data = doc.data();
         return (data.pigName === pigName || data.tagNumber === tagNumber) && (currentPigId === null || doc.id !== currentPigId);
@@ -83,21 +98,27 @@ export default function AddPigInfoScreen({ route }) {
       return false;
     }
   };
-
+  
+  
   // Add Pig
   const handleAddPig = async () => {
     if (!pigName.trim() || !tagNumber.trim() || !gender || !race.trim()) {
       Alert.alert('Validation Error', 'All fields are required.');
       return;
     }
-
+  
     if (await checkForDuplicates()) {
       Alert.alert('Duplicate Pig Name', 'A Pig Name already exists. Please try another name.');
       return;
     }
-
+  
     try {
-      const docRef = await addDoc(collection(firestore, `users/${user.uid}/pigGroups/${pigGroupId}/pigs`), {
+      // Build the path dynamically, handling the "main" case
+      const pigCollectionPath = selectedBranch && selectedBranch !== 'main'
+        ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`
+        : `users/${user.uid}/pigGroups/${pigGroupId}/pigs`;
+  
+      const docRef = await addDoc(collection(firestore, pigCollectionPath), {
         pigName,
         tagNumber,
         gender,
@@ -106,7 +127,6 @@ export default function AddPigInfoScreen({ route }) {
       });
       Alert.alert('Success', 'Pig added successfully!');
       setModalVisible(false);
-      // Reset form
       setPigName('');
       setTagNumber('');
       setGender('male');

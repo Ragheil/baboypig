@@ -13,14 +13,13 @@ const FarmNameScreen = ({ onFarmNameSet }) => {
       alert('Please enter a farm name');
       return;
     }
-
-    
+  
     try {
-      const userDoc = doc(firestore, 'users', auth.currentUser.uid);
-      await setDoc(userDoc, { farmName }, { merge: true });
+      const farmBranchDoc = doc(firestore, `users/${auth.currentUser.uid}/farmBranches/${farmName}`);
+      await setDoc(farmBranchDoc, { name: farmName }, { merge: true });
       console.log(`Farm name saved: ${farmName}`);
       onFarmNameSet(farmName); // Notify the parent component that the farm name is set
-
+  
       // Navigate to Dashboard
       navigation.reset({
         index: 0,
@@ -30,7 +29,7 @@ const FarmNameScreen = ({ onFarmNameSet }) => {
       console.error('Error saving farm name:', error.message);
     }
   };
-
+  
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Enter Your Farm Name</Text>
