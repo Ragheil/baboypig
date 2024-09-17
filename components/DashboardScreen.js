@@ -14,26 +14,26 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, onSnapshot, updateDoc, doc, addDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, doc, setDoc } from 'firebase/firestore';
 import { firestore, auth } from '../firebase/config2';
 import FooterScreen from './footer/FooterScreen';
-import { Picker } from '@react-native-picker/picker'; 
+import { Picker } from '@react-native-picker/picker';
 import styles from '../frontend/componentsStyles/DashboardScreenStyles'; // Importing the separated styles
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pigGroups, setPigGroups] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [branchModalVisible, setBranchModalVisible] = useState(false); 
+  const [branchModalVisible, setBranchModalVisible] = useState(false);
+  const [newBranchName, setNewBranchName] = useState(''); // State for new branch name
   const [updatedFirstName, setUpdatedFirstName] = useState(firstName);
   const [updatedLastName, setUpdatedLastName] = useState(lastName);
   const [updatedFarmName, setUpdatedFarmName] = useState(farmName);
   const [currentFirstName, setCurrentFirstName] = useState(firstName);
   const [currentLastName, setCurrentLastName] = useState(lastName);
   const [currentFarmName, setCurrentFarmName] = useState(farmName);
-  const [newBranchName, setNewBranchName] = useState(''); 
-  const [branches, setBranches] = useState([]); 
-  const [selectedBranch, setSelectedBranch] = useState(farmName); 
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState(farmName);
   const sidebarTranslateX = useState(new Animated.Value(Dimensions.get('window').width))[0];
   const navigation = useNavigation();
   const user = auth.currentUser;
@@ -67,9 +67,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         };
       });
     }
-  }, [user]); 
-  
-
+  }, [user]);
 
   useEffect(() => {
     setCurrentFirstName(updatedFirstName);
@@ -137,16 +135,6 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     }
   };
 
-  const handleAddBranch = async () => {
-    if (user && newBranchName.trim()) {
-      await addDoc(collection(firestore, `users/${user.uid}/farmBranches`), {
-        name: newBranchName.trim(),
-      });
-      setNewBranchName('');
-      setBranchModalVisible(false);
-    }
-  };
-
   // Handle branch switch
   const handleBranchSwitch = (branchName) => {
     if (branchName !== selectedBranch) {
@@ -171,7 +159,28 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       );
     }
   };
-  
+
+  // Handle adding a new branch
+  const handleAddBranch = async () => {
+    if (!newBranchName.trim()) {
+      Alert.alert('Validation Error', 'Branch name is required!');
+      return;
+    }
+
+    try {
+      if (user) {
+        const branchRef = doc(firestore, `users/${user.uid}/farmBranches/${newBranchName}`);
+        // Use setDoc to create a new document
+        await setDoc(branchRef, { name: newBranchName });
+
+        setNewBranchName('');
+        setBranchModalVisible(false);
+        console.log('New branch added:', newBranchName);
+      }
+    } catch (error) {
+      console.error('Error adding branch:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -183,13 +192,13 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           <Text style={styles.title}>Pig Groups Summary</Text>
 
           <TouchableOpacity
-  style={[styles.seeAllButton, { zIndex: 10, elevation: 5 }]}
-  onPress={() => navigation.navigate('PigGroups', {
-    selectedBranch: selectedBranch === `Main Farm: ${farmName}` ? 'main' : selectedBranch,
-  })}
->
-  <Text style={styles.seeAllText}>See All</Text>
-</TouchableOpacity>
+            style={[styles.seeAllButton, { zIndex: 10, elevation: 5 }]}
+            onPress={() => navigation.navigate('PigGroups', {
+              selectedBranch: selectedBranch === `Main Farm: ${farmName}` ? 'main' : selectedBranch,
+            })}
+          >
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
 
           <FlatList
             data={pigGroups}
@@ -233,11 +242,6 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           <Divider style={styles.sidebarDivider} />
           <Text style={styles.sidebarText}>Farm: {currentFarmName}</Text>
 
-          {/* Add Branch Button */}
-          <TouchableOpacity style={styles.addBranchButton} onPress={() => setBranchModalVisible(true)}>
-            <Text style={styles.addBranchButtonText}>Add Branch</Text>
-          </TouchableOpacity>
-
           {/* Branch Picker */}
           <Picker
             selectedValue={selectedBranch}
@@ -250,71 +254,87 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             ))}
           </Picker>
 
+          <TouchableOpacity style={styles.sidebarButton} onPress={() => setBranchModalVisible(true)}>
+            <Text style={styles.sidebarButtonText}>Add Branch</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.sidebarButton} onPress={confirmLogout}>
             <Text style={styles.sidebarButtonText}>Logout</Text>
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Modal for updating account info */}
-        <Modal visible={modalVisible} animationType="slide" transparent>
+        {/* Account Modal */}
+        <Modal
+          transparent={true}
+          visible={modalVisible}
+          animationType="slide"
+          onRequestClose={() => setModalVisible(false)}
+        >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Update Account</Text>
               <TextInput
-                style={styles.input}
+                style={styles.modalInput}
                 value={updatedFirstName}
                 onChangeText={setUpdatedFirstName}
                 placeholder="First Name"
               />
               <TextInput
-                style={styles.input}
+                style={styles.modalInput}
                 value={updatedLastName}
                 onChangeText={setUpdatedLastName}
                 placeholder="Last Name"
               />
               <TextInput
-                style={styles.input}
+                style={styles.modalInput}
                 value={updatedFarmName}
                 onChangeText={setUpdatedFarmName}
                 placeholder="Farm Name"
               />
-              <View style={styles.modalButtons}>
-                <TouchableOpacity style={styles.modalButton} onPress={handleUpdate}>
-                  <Text style={styles.modalButtonText}>Update</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: '#ccc' }]}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.modalButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={handleUpdate}
+              >
+                <Text style={styles.modalButtonText}>Update</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
 
-        {/* Modal for adding a branch */}
-        <Modal visible={branchModalVisible} animationType="slide" transparent>
+        {/* Add Branch Modal */}
+        <Modal
+          transparent={true}
+          visible={branchModalVisible}
+          animationType="slide"
+          onRequestClose={() => setBranchModalVisible(false)}
+        >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Add New Branch</Text>
+              <Text style={styles.modalTitle}>Add Branch</Text>
               <TextInput
-                style={styles.input}
+                style={styles.modalInput}
                 value={newBranchName}
                 onChangeText={setNewBranchName}
-                placeholder="New Branch Name"
+                placeholder="Branch Name"
               />
-              <View style={styles.modalButtons}>
-                <TouchableOpacity style={styles.modalButton} onPress={handleAddBranch}>
-                  <Text style={styles.modalButtonText}>Add Branch</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: '#ccc' }]}
-                  onPress={() => setBranchModalVisible(false)}
-                >
-                  <Text style={styles.modalButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={handleAddBranch}
+              >
+                <Text style={styles.modalButtonText}>Add</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setBranchModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>

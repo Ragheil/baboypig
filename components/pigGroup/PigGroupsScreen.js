@@ -3,14 +3,16 @@ import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, Scr
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where } from 'firebase/firestore';
 import { auth, firestore } from '../../firebase/config2'; // Adjust the path as needed
 import Modal from 'react-native-modal'; // Ensure this import is present for the modal library
+import { useRoute } from '@react-navigation/native';
 
 // Import your icons
 import editIcon from '../../assets/images/buttons/editIcon.png'; // Adjust the path as needed
 import deleteIcon from '../../assets/images/buttons/deleteIcon.png'; // Adjust the path as needed
 import styles from '../../frontend/pigGroupStyles/PigGroupsScreenStyles'; // Importing the separated styles
 
-const PigGroupsScreen = ({ navigation, route }) => {
-  const { selectedBranch } = route.params; // Get the selected branch from params
+const PigGroupsScreen = ({ navigation }) => {
+  const route = useRoute();
+  const { selectedBranch } = route.params || {};
   const [pigGroups, setPigGroups] = useState([]);
   const [filteredPigGroups, setFilteredPigGroups] = useState([]);
   const [name, setName] = useState('');
@@ -23,12 +25,13 @@ const PigGroupsScreen = ({ navigation, route }) => {
   const user = auth.currentUser;
 
   useEffect(() => {
-    if (user && selectedBranch) {
+    if (user) {
       fetchPigGroups();
       const interval = setInterval(fetchPigGroups, 1000); // Fetch every second
       return () => clearInterval(interval); // Cleanup on unmount
     }
-  }, [user, selectedBranch]);
+  }, [user, selectedBranch]); // Add selectedBranch to dependencies
+  
 
   useEffect(() => {
     const results = pigGroups.filter(group =>
@@ -40,51 +43,41 @@ const PigGroupsScreen = ({ navigation, route }) => {
   const fetchPigGroups = async () => {
     try {
       if (!user) return;
-      
-      let pigGroupsPath;
-      if (selectedBranch === 'main') {
-        // Fetch pig groups from the main farm
-        pigGroupsPath = `users/${user.uid}/pigGroups`;
-      } else {
-        // Fetch pig groups from the selected branch
-        pigGroupsPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`;
-      }
-
-      const pigGroupsCollection = collection(firestore, pigGroupsPath);
-      const q = query(pigGroupsCollection, orderBy('name'));
+  
+      const userPigGroupsCollection = collection(firestore, selectedBranch && selectedBranch !== 'main'
+        ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`
+        : `users/${user.uid}/pigGroups`);
+  
+      let q = query(userPigGroupsCollection, orderBy('name'));
+  
       const querySnapshot = await getDocs(q);
-      
+  
       const pigGroupsList = await Promise.all(querySnapshot.docs.map(async doc => {
         const pigGroupId = doc.id;
-        const pigsCollection = collection(firestore, `${pigGroupsPath}/${pigGroupId}/pigs`);
+        const pigsCollection = collection(firestore, `users/${user.uid}/pigGroups/${pigGroupId}/pigs`);
         const pigsSnapshot = await getDocs(pigsCollection);
         const pigCount = pigsSnapshot.size;
-
+  
         return {
           id: pigGroupId,
           ...doc.data(),
           pigCount: pigCount, // Add the pig count to the group data
         };
       }));
-
+  
       setPigGroups(pigGroupsList);
     } catch (error) {
       console.error('Error fetching pig groups:', error);
     }
   };
+  
+  
 
   const isPigGroupNameDuplicate = async (name) => {
     if (!user) return false;
     
     try {
-      let pigGroupsPath;
-      if (selectedBranch === 'main') {
-        pigGroupsPath = `users/${user.uid}/pigGroups`;
-      } else {
-        pigGroupsPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`;
-      }
-      
-      const userPigGroupsCollection = collection(firestore, pigGroupsPath);
+      const userPigGroupsCollection = collection(firestore, `users/${user.uid}/pigGroups`);
       const q = query(userPigGroupsCollection, where('name', '==', name));
       const querySnapshot = await getDocs(q);
       return !querySnapshot.empty;
@@ -96,46 +89,49 @@ const PigGroupsScreen = ({ navigation, route }) => {
 
   const addOrUpdatePigGroup = async () => {
     if (!name.trim()) {
-        Alert.alert('Validation Error', 'Name is required!');
-        return;
+      Alert.alert('Validation Error', 'Name is required!');
+      return;
     }
-
+  
+    // Check for duplicate name
     const isDuplicate = await isPigGroupNameDuplicate(name);
     if (isDuplicate && (!editPigGroupId || pigGroups.find(group => group.name === name)?.id !== editPigGroupId)) {
-        Alert.alert('Duplicate Pig Group', 'A pig group with this name already exists. Please try another name.');
-        return;
+      Alert.alert('Duplicate Pig Group', 'A pig group with this name already exists. Please try another name.');
+      return;
     }
-
+  
     try {
-        if (!user) return;
-
-        // Use the document ID of the selected branch, not the branch name
-        let pigGroupsPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`;
-
-        if (editPigGroupId) {
-            // Update existing pig group
-            await updateDoc(doc(firestore, pigGroupsPath, editPigGroupId), {
-                name,
-            });
-            console.log('Pig group updated:', name);
-            setEditPigGroupId(null); // Reset the edit ID
-        } else {
-            // Add a new pig group
-            await addDoc(collection(firestore, pigGroupsPath), {
-                name,
-            });
-            console.log('Pig group added:', name);
-        }
-
-        // Clear the input and close modal after the operation
-        setName('');
-        setIsAddEditModalVisible(false);
+      if (!user) return;
+  
+      // Determine the collection path based on the selected branch
+      const collectionPath = selectedBranch && selectedBranch !== 'main'
+        ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`
+        : `users/${user.uid}/pigGroups`;
+  
+      const pigGroupsCollection = collection(firestore, collectionPath);
+  
+      if (editPigGroupId) {
+        await updateDoc(doc(firestore, collectionPath, editPigGroupId), {
+          name,
+        });
+        console.log('Pig group updated:', name); // Log update
+        setEditPigGroupId(null); // Reset edit mode
+      } else {
+        await addDoc(pigGroupsCollection, {
+          name,
+        });
+        console.log('Pig group added:', name); // Log addition
+      }
+  
+      setName('');
+      setIsAddEditModalVisible(false); // Close the modal after saving
     } catch (error) {
-        console.error('Error adding/updating pig group:', error);
+      console.error('Error adding/updating pig group:', error);
     }
-};
-
-
+  };
+  
+  
+  
 
   const confirmDeletePigGroup = (pigGroup) => {
     setCurrentPigGroupName(pigGroup.name);
@@ -151,15 +147,7 @@ const PigGroupsScreen = ({ navigation, route }) => {
 
     try {
       if (!user) return;
-      
-      let pigGroupsPath;
-      if (selectedBranch === 'main') {
-        pigGroupsPath = `users/${user.uid}/pigGroups`;
-      } else {
-        pigGroupsPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`;
-      }
-
-      await deleteDoc(doc(firestore, pigGroupsPath, editPigGroupId));
+      await deleteDoc(doc(firestore, `users/${user.uid}/pigGroups`, editPigGroupId));
       console.log('Pig group deleted:', currentPigGroupName); // Log deletion
       setIsDeleteModalVisible(false); // Close the modal after deletion
       setDeleteConfirmation('');
@@ -275,5 +263,7 @@ const PigGroupsScreen = ({ navigation, route }) => {
     </View>
   );
 };
+
+
 
 export default PigGroupsScreen;
