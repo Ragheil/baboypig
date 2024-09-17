@@ -14,6 +14,7 @@ const FarmNameScreen = ({ onFarmNameSet }) => {
       return;
     }
 
+    
     try {
       const userDoc = doc(firestore, 'users', auth.currentUser.uid);
       await setDoc(userDoc, { farmName }, { merge: true });
