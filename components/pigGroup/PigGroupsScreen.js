@@ -70,13 +70,19 @@ const PigGroupsScreen = ({ navigation }) => {
     }
   };
   
-  
-  
-  
-  
-
   const isPigGroupNameDuplicate = async (name) => {
-    if (!user) return false;
+    if (!user || !selectedBranch) return false;
+   
+    try {
+      // Ensure the check is within the selected branch
+      const pigGroupsCollection = collection(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`);
+      const q = query(pigGroupsCollection, where('name', '==', name));
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error('Error checking pig group name:', error);
+      return false;
+    }
     
     try {
       const userPigGroupsCollection = collection(firestore, `users/${user.uid}/pigGroups`);
@@ -91,6 +97,13 @@ const PigGroupsScreen = ({ navigation }) => {
   const addOrUpdatePigGroup = async () => {
     if (!name.trim()) {
       Alert.alert('Validation Error', 'Name is required!');
+      return;
+    }
+  
+    // Check for duplicate name before proceeding
+    const isDuplicate = await isPigGroupNameDuplicate(name);
+    if (isDuplicate) {
+      Alert.alert('Validation Error', 'A pig group with this name already exists in the selected branch.');
       return;
     }
   
@@ -140,6 +153,19 @@ const PigGroupsScreen = ({ navigation }) => {
       Alert.alert('Validation Error', 'Pig group name does not match.');
       return;
     }
+  
+    try {
+      if (!user || !selectedBranch) return;
+  
+      // Deleting the pig group from the correct path
+      await deleteDoc(doc(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`, editPigGroupId));
+      console.log('Pig group deleted:', currentPigGroupName); // Log deletion
+      setIsDeleteModalVisible(false); // Close the modal after deletion
+      setDeleteConfirmation('');
+    } catch (error) {
+      console.error('Error deleting pig group:', error);
+    }
+  
 
     try {
       if (!user) return;

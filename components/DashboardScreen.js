@@ -14,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, onSnapshot, updateDoc, doc, setDoc } from 'firebase/firestore';
+import { deleteField, updateDoc, writeBatch, doc, getDocs, query, collection, onSnapshot, setDoc } from 'firebase/firestore'; // Correct import for deleteField
 import { firestore, auth } from '../firebase/config2';
 import FooterScreen from './footer/FooterScreen';
 import { Picker } from '@react-native-picker/picker';
@@ -23,6 +23,7 @@ import styles from '../frontend/componentsStyles/DashboardScreenStyles'; // Impo
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pigGroups, setPigGroups] = useState([]);
+  
   const [modalVisible, setModalVisible] = useState(false);
   const [branchModalVisible, setBranchModalVisible] = useState(false);
   const [newBranchName, setNewBranchName] = useState(''); // State for new branch name
@@ -123,18 +124,56 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     );
   };
 
-  const handleUpdate = async () => {
-    if (user) {
-      const userDoc = doc(firestore, `users/${user.uid}`);
+  
+const handleUpdate = async () => {
+  if (user) {
+    const userDoc = doc(firestore, `users/${user.uid}`);
+
+    // Initialize a Firestore batch
+    const batch = writeBatch(firestore);
+
+    try {
+      // Update the user's main document (first name and last name only)
       await updateDoc(userDoc, {
         firstName: updatedFirstName,
         lastName: updatedLastName,
-        farmName: updatedFarmName,
       });
-      setModalVisible(false);
-    }
-  };
 
+      // Fetch all farm branches
+      const branchQuery = query(collection(firestore, `users/${user.uid}/farmBranches`));
+      const branchSnapshot = await getDocs(branchQuery);
+
+      if (!branchSnapshot.empty) {
+        branchSnapshot.forEach((branchDoc) => {
+          const branchRef = doc(firestore, `users/${user.uid}/farmBranches/${branchDoc.id}`);
+          const branchData = branchDoc.data();
+
+          // If 'name' field exists, delete it
+          if (branchData.name) {
+            batch.update(branchRef, {
+              name: deleteField(),  // Only deleting 'name' field from the branch
+            });
+          }
+        });
+      } else {
+        throw new Error("No branches found.");
+      }
+
+      // Commit the batch update
+      await batch.commit();
+
+      setModalVisible(false);
+      console.log("Branch 'name' fields deleted successfully.");
+    } catch (error) {
+      console.error("Error updating branches:", error);
+      Alert.alert("Update Error", "There was an error updating the branches.");
+    }
+  }
+};
+  
+  
+  
+  
   // Handle branch switch
   const handleBranchSwitch = (branchName) => {
     if (branchName !== selectedBranch) {
