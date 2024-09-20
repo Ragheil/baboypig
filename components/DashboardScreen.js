@@ -14,18 +14,19 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Divider } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, onSnapshot, updateDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { firestore, auth } from '../firebase/config2';
 import FooterScreen from './footer/FooterScreen';
 import { Picker } from '@react-native-picker/picker';
-import styles from '../frontend/componentsStyles/DashboardScreenStyles'; // Importing the separated styles
+import styles from '../frontend/componentsStyles/DashboardScreenStyles';
 
 export default function DashboardScreen({ firstName, lastName, farmName, onLogout }) {
+  // State variables
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pigGroups, setPigGroups] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [branchModalVisible, setBranchModalVisible] = useState(false);
-  const [newBranchName, setNewBranchName] = useState(''); // State for new branch name
+  const [newBranchName, setNewBranchName] = useState('');
   const [updatedFirstName, setUpdatedFirstName] = useState(firstName);
   const [updatedLastName, setUpdatedLastName] = useState(lastName);
   const [updatedFarmName, setUpdatedFarmName] = useState(farmName);
@@ -46,21 +47,17 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         const farmName = userData?.farmName || '';
         
         setCurrentFarmName(farmName);
-        setSelectedBranch(farmName); // Set the initial selected branch to farm name
-  
+        setSelectedBranch(farmName);
+
         const q = query(collection(firestore, `users/${user.uid}/farmBranches`));
         const unsubscribeFarmBranches = onSnapshot(q, (snapshot) => {
           const branchList = [];
           snapshot.forEach((doc) => {
             branchList.push({ id: doc.id, ...doc.data() });
           });
-          // Add the farm name as the first item in the branch list
-          setBranches([ 
-            { id: 'farmName', name: `Main Farm: ${farmName}` }, // Label with "Main Farm"
-            ...branchList 
-          ]);
+          setBranches([{ id: 'farmName', name: `Main Farm: ${farmName}` }, ...branchList]);
         });
-  
+
         return () => {
           unsubscribeFarmBranches();
           unsubscribeUserDoc();
@@ -122,18 +119,32 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       { cancelable: true }
     );
   };
-
   const handleUpdate = async () => {
     if (user) {
       const userDoc = doc(firestore, `users/${user.uid}`);
-      await updateDoc(userDoc, {
-        firstName: updatedFirstName,
-        lastName: updatedLastName,
-        farmName: updatedFarmName,
-      });
-      setModalVisible(false);
+      const branchDoc = doc(firestore, `users/${user.uid}/farmBranches/${currentFarmName}`);
+  
+      try {
+        // Update user document
+        await updateDoc(userDoc, {
+          firstName: updatedFirstName,
+          lastName: updatedLastName,
+          farmName: updatedFarmName,
+        });
+  
+        // Only update branch name if it's changing
+        if (currentFarmName !== updatedFarmName) {
+          await updateDoc(branchDoc, { name: updatedFarmName });
+        }
+        
+        setModalVisible(false);
+      } catch (error) {
+        console.error('Error updating account:', error);
+      }
     }
   };
+  
+  
 
   // Handle branch switch
   const handleBranchSwitch = (branchName) => {
@@ -142,10 +153,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         "Switch Branch",
         `Do you want to switch to the ${branchName} branch?`,
         [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
+          { text: "Cancel", style: "cancel" },
           {
             text: "Yes",
             onPress: () => {
@@ -166,19 +174,42 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       Alert.alert('Validation Error', 'Branch name is required!');
       return;
     }
-
+  
     try {
       if (user) {
         const branchRef = doc(firestore, `users/${user.uid}/farmBranches/${newBranchName}`);
-        // Use setDoc to create a new document
+        
+        // Check if the branch already exists
+        const branchSnapshot = await getDoc(branchRef);
+        if (branchSnapshot.exists()) {
+          Alert.alert('Branch Error', 'A branch with this name already exists!');
+          return;
+        }
+  
+        // Create a new document with the branch name as the ID
         await setDoc(branchRef, { name: newBranchName });
-
-        setNewBranchName('');
-        setBranchModalVisible(false);
+  
+        setNewBranchName(''); // Clear the input
+        setBranchModalVisible(false); // Close the modal
         console.log('New branch added:', newBranchName);
       }
     } catch (error) {
       console.error('Error adding branch:', error);
+    }
+  };
+  
+
+  // Handle updating a branch name
+  const handleUpdateBranch = async (branchId) => {
+    if (user) {
+      const branchDocRef = doc(firestore, `users/${user.uid}/farmBranches/${branchId}`);
+      try {
+        await updateDoc(branchDocRef, { name: updatedFarmName });
+        setBranchModalVisible(false);
+        console.log('Branch name updated successfully:', updatedFarmName);
+      } catch (error) {
+        console.error('Error updating branch name:', error);
+      }
     }
   };
 
@@ -241,7 +272,6 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           </View>
           <Divider style={styles.sidebarDivider} />
           <Text style={styles.sidebarText}> Farm: <Text style={{ fontWeight: 'bold' }}>{currentFarmName}</Text> </Text>
-
 
           {/* Branch Picker */}
           <Picker
