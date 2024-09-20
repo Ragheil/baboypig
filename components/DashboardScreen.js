@@ -123,7 +123,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     if (user) {
       const userDoc = doc(firestore, `users/${user.uid}`);
       const branchDoc = doc(firestore, `users/${user.uid}/farmBranches/${currentFarmName}`);
-  
+    
       try {
         // Update user document
         await updateDoc(userDoc, {
@@ -132,7 +132,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           farmName: updatedFarmName,
         });
   
-        // Only update branch name if it's changing
+        // Only update the branch name if it's changing
         if (currentFarmName !== updatedFarmName) {
           await updateDoc(branchDoc, { name: updatedFarmName });
         }
@@ -143,6 +143,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       }
     }
   };
+  
   
   
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where } from 'firebase/firestore';
 import { auth, firestore } from '../../firebase/config2';
 import Modal from 'react-native-modal';
@@ -39,28 +39,30 @@ const PigGroupsScreen = ({ navigation, route }) => {
   const fetchPigGroups = async () => {
     try {
       if (!user) return;
-
-      // Use main branch path for pig groups
-      const pigGroupsCollection = collection(firestore, `users/${user.uid}/pigGroups`);
+  
+      const pigGroupsCollection = selectedBranch === 'main' 
+        ? collection(firestore, `users/${user.uid}/pigGroups`) 
+        : collection(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`);
+  
       const q = query(pigGroupsCollection, orderBy('name'));
       const querySnapshot = await getDocs(q);
-
+    
       const pigGroupsList = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       }));
-
+    
       setPigGroups(pigGroupsList);
     } catch (error) {
       console.error('Error fetching pig groups:', error);
     }
   };
-
+  
   const isPigGroupNameDuplicate = async (name) => {
     if (!user) return false;
 
     try {
-      const pigGroupsCollection = collection(firestore, `users/${user.uid}/pigGroups`);
+      const pigGroupsCollection = collection(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`);
       const q = query(pigGroupsCollection, where('name', '==', name));
       const querySnapshot = await getDocs(q);
       return !querySnapshot.empty;
@@ -75,33 +77,39 @@ const PigGroupsScreen = ({ navigation, route }) => {
       Alert.alert('Validation Error', 'Name is required!');
       return;
     }
-
+  
     const isDuplicate = await isPigGroupNameDuplicate(name);
     if (isDuplicate) {
       Alert.alert('Validation Error', 'A pig group with this name already exists.');
       return;
     }
-
+  
     try {
       if (!user) return;
-
-      const pigGroupsCollection = collection(firestore, `users/${user.uid}/pigGroups`);
-
+  
+      // Determine the path based on selected branch
+      const pigGroupsCollection = selectedBranch === 'main' 
+        ? collection(firestore, `users/${user.uid}/pigGroups`) 
+        : collection(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`);
+  
       if (editPigGroupId) {
-        await updateDoc(doc(firestore, `users/${user.uid}/pigGroups`, editPigGroupId), { name });
+        // Update existing pig group
+        await updateDoc(doc(pigGroupsCollection, editPigGroupId), { name });
         console.log('Pig group updated:', name);
-        setEditPigGroupId(null);
       } else {
+        // Add new pig group
         await addDoc(pigGroupsCollection, { name });
         console.log('Pig group added:', name);
       }
-
+  
       setName('');
+      setEditPigGroupId(null);
       setIsAddEditModalVisible(false);
     } catch (error) {
       console.error('Error adding/updating pig group:', error);
     }
   };
+  
 
   const confirmDeletePigGroup = (pigGroup) => {
     setCurrentPigGroupName(pigGroup.name);
@@ -118,7 +126,7 @@ const PigGroupsScreen = ({ navigation, route }) => {
     try {
       if (!user) return;
 
-      await deleteDoc(doc(firestore, `users/${user.uid}/pigGroups`, editPigGroupId));
+      await deleteDoc(doc(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`, editPigGroupId));
       console.log('Pig group deleted:', currentPigGroupName);
       setIsDeleteModalVisible(false);
       setDeleteConfirmation('');
@@ -173,7 +181,7 @@ const PigGroupsScreen = ({ navigation, route }) => {
       <Text style={styles.title}>Pig Groups for {selectedBranch} branch</Text>
 
       <View style={styles.searchAndAddContainer}>
-        <Button title="Add Pig Group" onPress={openAddPigGroupModal} color="#4CAF50" style={styles.addButton} />
+        <Button title="Add Pig Group" onPress={openAddPigGroupModal} color="#4CAF50" />
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name"
@@ -195,8 +203,8 @@ const PigGroupsScreen = ({ navigation, route }) => {
             value={name}
             onChangeText={setName}
           />
-          <Button title="Save" onPress={addOrUpdatePigGroup} color="#4CAF50" style={styles.saveButton} />
-          <Button title="Cancel" onPress={closeModal} color="#F44336" style={styles.cancelButton} />
+          <Button title="Save" onPress={addOrUpdatePigGroup} color="#4CAF50" />
+          <Button title="Cancel" onPress={closeModal} color="#F44336" />
         </View>
       </Modal>
 
@@ -213,8 +221,8 @@ const PigGroupsScreen = ({ navigation, route }) => {
             value={deleteConfirmation}
             onChangeText={setDeleteConfirmation}
           />
-          <Button title="Delete" onPress={deletePigGroup} color="#F44336" style={styles.saveButton} />
-          <Button title="Cancel" onPress={closeModal} color="#4CAF50" style={styles.cancelButton} />
+          <Button title="Delete" onPress={deletePigGroup} color="#F44336" />
+          <Button title="Cancel" onPress={closeModal} color="#4CAF50" />
         </View>
       </Modal>
     </View>
