@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where, getDoc } from 'firebase/firestore';
 import { auth, firestore } from '../../firebase/config2';
 import Modal from 'react-native-modal';
 import { useRoute } from '@react-navigation/native';
@@ -36,28 +36,50 @@ const PigGroupsScreen = ({ navigation, route }) => {
     setFilteredPigGroups(results);
   }, [searchQuery, pigGroups]);
 
+  // Function to check if the selected branch exists before allowing pig group operations
+  const branchExists = async () => {
+    try {
+      const branchRef = selectedBranch === 'main' 
+        ? doc(firestore, `users/${user.uid}/farmBranches/Main Farm`) 
+        : doc(firestore, `users/${user.uid}/farmBranches/${selectedBranch}`);
+      
+      const branchSnapshot = await getDoc(branchRef);
+      return branchSnapshot.exists();  // Returns true if the branch exists
+    } catch (error) {
+      console.error('Error checking branch existence:', error);
+      return false;
+    }
+  };
+  
   const fetchPigGroups = async () => {
     try {
       if (!user) return;
   
-      const pigGroupsCollection = selectedBranch === 'main' 
-        ? collection(firestore, `users/${user.uid}/pigGroups`) 
+      if (selectedBranch !== 'Main Farm' && !(await branchExists())) {
+        console.log(`Branch ${selectedBranch} does not exist.`);
+        return;
+      }
+  
+      // Corrected pigGroupsCollection logic
+      const pigGroupsCollection = selectedBranch === 'Main Farm'
+        ? collection(firestore, `users/${user.uid}/farmBranches/Main Farm/pigGroups`) // Access pig groups under "Main Farm" document
         : collection(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`);
   
       const q = query(pigGroupsCollection, orderBy('name'));
       const querySnapshot = await getDocs(q);
-    
+  
       const pigGroupsList = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       }));
-    
+  
       setPigGroups(pigGroupsList);
     } catch (error) {
       console.error('Error fetching pig groups:', error);
     }
   };
   
+
   const isPigGroupNameDuplicate = async (name) => {
     if (!user) return false;
 
@@ -77,21 +99,25 @@ const PigGroupsScreen = ({ navigation, route }) => {
       Alert.alert('Validation Error', 'Name is required!');
       return;
     }
-  
+
+    if (selectedBranch !== 'Main Farm' && !(await branchExists())) {
+      Alert.alert('Validation Error', `Branch ${selectedBranch} does not exist. Please select a valid branch.`);
+      return;
+    }
+
     const isDuplicate = await isPigGroupNameDuplicate(name);
     if (isDuplicate) {
       Alert.alert('Validation Error', 'A pig group with this name already exists.');
       return;
     }
-  
+
     try {
       if (!user) return;
-  
-      // Determine the path based on selected branch
-      const pigGroupsCollection = selectedBranch === 'main' 
-        ? collection(firestore, `users/${user.uid}/pigGroups`) 
+
+      const pigGroupsCollection = selectedBranch === 'Main Farm'
+        ? collection(firestore, `users/${user.uid}/farmBranches/Main Farm/pigGroups`)
         : collection(firestore, `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`);
-  
+
       if (editPigGroupId) {
         // Update existing pig group
         await updateDoc(doc(pigGroupsCollection, editPigGroupId), { name });
@@ -101,7 +127,7 @@ const PigGroupsScreen = ({ navigation, route }) => {
         await addDoc(pigGroupsCollection, { name });
         console.log('Pig group added:', name);
       }
-  
+
       setName('');
       setEditPigGroupId(null);
       setIsAddEditModalVisible(false);
@@ -109,7 +135,6 @@ const PigGroupsScreen = ({ navigation, route }) => {
       console.error('Error adding/updating pig group:', error);
     }
   };
-  
 
   const confirmDeletePigGroup = (pigGroup) => {
     setCurrentPigGroupName(pigGroup.name);
