@@ -176,6 +176,9 @@ const PigGroupsScreen = ({ navigation, route }) => {
     setIsAddEditModalVisible(false);
     setIsDeleteModalVisible(false);
   };
+  const handlePigGroupClick = (pigGroup) => {
+    navigation.navigate('AddPigInfoScreen', { pigGroupId: pigGroup.id });
+  };
 
   const renderPigGroups = () => {
     return (
@@ -183,7 +186,7 @@ const PigGroupsScreen = ({ navigation, route }) => {
         {filteredPigGroups.map(pigGroup => (
           <TouchableOpacity
             key={pigGroup.id}
-            onPress={() => PigGroups(pigGroup)}
+            onPress={() => handlePigGroupClick(pigGroup)}
             style={styles.pigGroupItem}
           >
             <Text style={styles.pigGroupText}>{pigGroup.name}</Text>
