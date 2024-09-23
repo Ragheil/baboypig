@@ -241,10 +241,13 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
             style={styles.picker}
           >
             <Picker.Item label="Select a Branch" value="" />
-            {branches.map((branch) => (
-              <Picker.Item key={branch.id} label={branch.name} value={branch.id} />
-            ))}
+            {branches
+              .filter((branch) => branch.name) // Ensure branch has a valid name
+              .map((branch) => (
+                <Picker.Item key={branch.id} label={branch.name} value={branch.id} />
+              ))}
           </Picker>
+
 
           <TouchableOpacity style={styles.addBranchButton} onPress={() => setBranchModalVisible(true)}>
             <Text style={styles.addBranchText}>Add Branch</Text>

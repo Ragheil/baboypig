@@ -183,7 +183,7 @@ const PigGroupsScreen = ({ navigation, route }) => {
         {filteredPigGroups.map(pigGroup => (
           <TouchableOpacity
             key={pigGroup.id}
-            onPress={() => handlePigGroupClick(pigGroup)}
+            onPress={() => PigGroups(pigGroup)}
             style={styles.pigGroupItem}
           >
             <Text style={styles.pigGroupText}>{pigGroup.name}</Text>
