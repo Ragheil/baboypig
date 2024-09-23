@@ -54,8 +54,16 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           snapshot.forEach((doc) => {
             branchList.push({ id: doc.id, ...doc.data() });
           });
-          branchList.unshift({ id: 'Main Farm', name: `Main Farm: ${farmName}` });
-          setBranches(branchList);
+  
+          // Modify to include Main Farm with proper labeling
+  
+          // Update the names of other branches to include "Farm Branch:"
+          const updatedBranchList = branchList.map(branch => ({
+            id: branch.id,
+            name: branch.id === 'Main Farm' ? `Main Farm: ${farmName}` : `Farm Branch: ${branch.name}`
+          }));
+  
+          setBranches(updatedBranchList);
         });
   
         return () => {
@@ -65,6 +73,7 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
       });
     }
   }, [user]);
+  
   
 
   useEffect(() => {
@@ -127,26 +136,29 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     }
   };
 
-  const handleBranchSwitch = (branchName) => {
-    if (branchName !== selectedBranch) {
-      Alert.alert(
-        "Switch Branch",
-        `Do you want to switch to the ${branchName} branch?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Yes",
-            onPress: () => {
-              setSelectedBranch(branchName);
-              setCurrentFarmName(branchName === 'Main Farm' ? `Main Farm: ${farmName}` : branchName);
-              console.log(`Switched to ${branchName} branch.`);
-            },
+ const handleBranchSwitch = (branchName) => {
+  const selectedBranchObj = branches.find(branch => branch.id === branchName);
+
+  if (branchName !== selectedBranch) {
+    Alert.alert(
+      "Switch Branch",
+      `Do you want to switch to the ${selectedBranchObj?.name || branchName} branch?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Yes",
+          onPress: () => {
+            setSelectedBranch(branchName);
+            setCurrentFarmName(selectedBranchObj?.name || branchName); // Update farm name dynamically
+            console.log(`Switched to ${selectedBranchObj?.name || branchName} branch.`);
           },
-        ],
-        { cancelable: true }
-      );
-    }
-  };
+        },
+      ],
+      { cancelable: true }
+    );
+  }
+};
+
 
   const handleAddBranch = async () => {
     if (!newBranchName.trim()) {
@@ -236,17 +248,22 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
 
           {/* Branch Picker */}
           <Picker
-            selectedValue={selectedBranch}
-            onValueChange={handleBranchSwitch}
-            style={styles.picker}
-          >
-            <Picker.Item label="Select a Branch" value="" />
-            {branches
-              .filter((branch) => branch.name) // Ensure branch has a valid name
-              .map((branch) => (
-                <Picker.Item key={branch.id} label={branch.name} value={branch.id} />
-              ))}
-          </Picker>
+  selectedValue={selectedBranch}
+  onValueChange={handleBranchSwitch}
+  style={styles.picker}
+>
+  <Picker.Item label="Select a Branch" value="" />
+  {branches
+    .filter((branch) => branch.name) // Ensure branch has a valid name
+    .map((branch) => (
+      <Picker.Item
+        key={branch.id}
+        label={branch.id === 'Main Farm' ? ` ${branch.name}` : ` ${branch.name}`}
+        value={branch.id}
+      />
+    ))}
+</Picker>
+
 
 
           <TouchableOpacity style={styles.addBranchButton} onPress={() => setBranchModalVisible(true)}>
