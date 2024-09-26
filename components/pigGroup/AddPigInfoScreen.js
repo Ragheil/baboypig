@@ -62,11 +62,8 @@ export default function AddPigInfoScreen({ route }) {
 
   // Check for duplicates
   const checkForDuplicates = async () => {
-    const pigCollectionPath = selectedBranch
-    ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`
-    : `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}/pigs`;
+    const pigCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`;
   
-      
     const q = query(collection(firestore, pigCollectionPath));
     const querySnapshot = await getDocs(q);
 
@@ -98,8 +95,8 @@ export default function AddPigInfoScreen({ route }) {
         createdAt: new Date(),
       });
       Alert.alert('Success', 'Pig added successfully!');
+      resetFields();
       setModalVisible(false);
-      // Reset fields
     } catch (error) {
       console.error('Error adding pig:', error);
       Alert.alert('Error', 'There was a problem adding the pig.');
@@ -126,7 +123,8 @@ export default function AddPigInfoScreen({ route }) {
     }
 
     try {
-      await updateDoc(doc(firestore, `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}/pigs/${currentPigId}`), {
+      const pigCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs/${currentPigId}`;
+      await updateDoc(doc(firestore, pigCollectionPath), {
         pigName,
         tagNumber,
         gender,
@@ -134,11 +132,8 @@ export default function AddPigInfoScreen({ route }) {
       });
       Alert.alert('Success', 'Pig updated successfully!');
       setIsEditing(false);
+      resetFields();
       setModalVisible(false);
-      setPigName('');
-      setTagNumber('');
-      setGender('male');
-      setRace('');
       setCurrentPigId(null);
     } catch (error) {
       console.error('Error updating pig:', error);
@@ -155,7 +150,8 @@ export default function AddPigInfoScreen({ route }) {
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: async () => {
             try {
-              await deleteDoc(doc(firestore, `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}/pigs/${pigId}`));
+              const pigCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs/${pigId}`;
+              await deleteDoc(doc(firestore, pigCollectionPath));
               Alert.alert('Success', 'Pig deleted successfully!');
             } catch (error) {
               console.error('Error deleting pig:', error);
@@ -240,31 +236,27 @@ export default function AddPigInfoScreen({ route }) {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.label}>Pig Name</Text>
+            <Text style={styles.modalTitle}>{isEditing ? 'Edit Pig' : 'Add Pig'}</Text>
             <TextInput
               style={styles.input}
               placeholder="Pig Name"
               value={pigName}
               onChangeText={setPigName}
             />
-            <Text style={styles.label}>Tag Number</Text>
             <TextInput
               style={styles.input}
               placeholder="Tag Number"
               value={tagNumber}
               onChangeText={setTagNumber}
-              keyboardType="numeric"
             />
-            <Text style={styles.label}>Gender</Text>
             <Picker
               selectedValue={gender}
+              onValueChange={setGender}
               style={styles.picker}
-              onValueChange={(itemValue) => setGender(itemValue)}
             >
               <Picker.Item label="Male" value="male" />
               <Picker.Item label="Female" value="female" />
             </Picker>
-            <Text style={styles.label}>Race</Text>
             <TextInput
               style={styles.input}
               placeholder="Race"
@@ -272,12 +264,14 @@ export default function AddPigInfoScreen({ route }) {
               onChangeText={setRace}
             />
             <Button
-              title={isEditing ? "Update Pig" : "Add Pig"}
+              title={isEditing ? 'Update Pig' : 'Add Pig'}
               onPress={isEditing ? handleEditPig : handleAddPig}
+              color="#4CAF50"
             />
             <Button
               title="Cancel"
               onPress={() => setModalVisible(false)}
+              color="#f44336"
             />
           </View>
         </View>
@@ -294,16 +288,18 @@ export default function AddPigInfoScreen({ route }) {
           <View style={styles.modalContent}>
             {selectedPig && (
               <>
-                <Text style={styles.label}>Pig Name: {selectedPig.pigName}</Text>
-                <Text style={styles.label}>Tag Number: {selectedPig.tagNumber}</Text>
-                <Text style={styles.label}>Gender: {selectedPig.gender}</Text>
-                <Text style={styles.label}>Race: {selectedPig.race}</Text>
+                <Text style={styles.modalTitle}>Pig Details</Text>
+                <Text style={styles.pigDetailText}>Name: {selectedPig.pigName}</Text>
+                <Text style={styles.pigDetailText}>Tag Number: {selectedPig.tagNumber}</Text>
+                <Text style={styles.pigDetailText}>Gender: {selectedPig.gender}</Text>
+                <Text style={styles.pigDetailText}>Race: {selectedPig.race}</Text>
+                <Button
+                  title="Close"
+                  onPress={() => setDetailModalVisible(false)}
+                  color="#2196F3"
+                />
               </>
             )}
-            <Button
-              title="Close"
-              onPress={() => setDetailModalVisible(false)}
-            />
           </View>
         </View>
       </Modal>
