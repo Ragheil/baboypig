@@ -177,8 +177,9 @@ const PigGroupsScreen = ({ navigation, route }) => {
     setIsDeleteModalVisible(false);
   };
   const handlePigGroupClick = (pigGroup) => {
-    navigation.navigate('AddPigInfoScreen', { pigGroupId: pigGroup.id });
+    navigation.navigate('AddPigInfoScreen', { pigGroupId: pigGroup.id, selectedBranch });
   };
+  
 
   const renderPigGroups = () => {
     return (

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, Modal, TouchableOpacity, Image } from 'react-native';
 import { addDoc, collection, query, onSnapshot, doc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
-import { auth, firestore } from '../../firebase/config2'; // Adjust the path as needed
+import { auth, firestore } from '../../firebase/config2';
 import { Picker } from '@react-native-picker/picker';
 import deleteIcon from '../../assets/images/buttons/deleteIcon.png';
 import editIcon from '../../assets/images/buttons/editIcon.png';
 import viewIcon from '../../assets/images/buttons/viewIcon.png';
-import styles from '../../frontend/pigGroupStyles/AddPigInfoScreenStyles'; // Importing the separated styles
+import styles from '../../frontend/pigGroupStyles/AddPigInfoScreenStyles';
 
 export default function AddPigInfoScreen({ route }) {
-  const { pigGroupId } = route.params;
+  const { pigGroupId, selectedBranch } = route.params; // Add selectedBranch param
   const [pigName, setPigName] = useState('');
   const [tagNumber, setTagNumber] = useState('');
   const [gender, setGender] = useState('male');
@@ -24,9 +24,12 @@ export default function AddPigInfoScreen({ route }) {
   const [selectedPig, setSelectedPig] = useState(null);
   const user = auth.currentUser;
 
-  // Fetch Pig Group Name
+  // Fetch Pig Group Name based on selected branch
   const fetchPigGroupName = async () => {
-    const pigCollectionPath = `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}`;
+    const pigCollectionPath = selectedBranch === 'Main Farm'
+      ? `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}`
+      : `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}`;
+      
     const docRef = doc(firestore, pigCollectionPath);
     const docSnapshot = await getDoc(docRef);
     if (docSnapshot.exists()) {
@@ -38,10 +41,13 @@ export default function AddPigInfoScreen({ route }) {
     fetchPigGroupName();
   }, [pigGroupId, user.uid]);
 
-  // Fetch Pigs
+  // Fetch Pigs from the selected branch
   useEffect(() => {
     const fetchPigs = async () => {
-      const pigsCollectionPath = `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}/pigs`;
+      const pigsCollectionPath = selectedBranch === 'Main Farm'
+        ? `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}/pigs`
+        : `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`;
+      
       const q = query(collection(firestore, pigsCollectionPath));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const pigsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -52,11 +58,15 @@ export default function AddPigInfoScreen({ route }) {
     };
 
     fetchPigs();
-  }, [pigGroupId, user.uid]);
+  }, [pigGroupId, user.uid, selectedBranch]);
 
-  // Check for Duplicates
+  // Check for duplicates
   const checkForDuplicates = async () => {
-    const pigCollectionPath = `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}/pigs`;
+    const pigCollectionPath = selectedBranch
+    ? `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`
+    : `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}/pigs`;
+  
+      
     const q = query(collection(firestore, pigCollectionPath));
     const querySnapshot = await getDocs(q);
 
@@ -73,13 +83,13 @@ export default function AddPigInfoScreen({ route }) {
       return;
     }
 
-    if (await checkForDuplicates()) {
-      Alert.alert('Duplicate Pig Name', 'A Pig Name already exists. Please try another name.');
+    if (!pigGroupId || !selectedBranch) {
+      Alert.alert('Error', 'Pig Group or Branch is not selected.');
       return;
     }
+    const pigCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`;
 
     try {
-      const pigCollectionPath = `users/${user.uid}/farmBranches/Main Farm/pigGroups/${pigGroupId}/pigs`;
       const docRef = await addDoc(collection(firestore, pigCollectionPath), {
         pigName,
         tagNumber,
@@ -89,14 +99,18 @@ export default function AddPigInfoScreen({ route }) {
       });
       Alert.alert('Success', 'Pig added successfully!');
       setModalVisible(false);
-      setPigName('');
-      setTagNumber('');
-      setGender('male');
-      setRace('');
+      // Reset fields
     } catch (error) {
       console.error('Error adding pig:', error);
       Alert.alert('Error', 'There was a problem adding the pig.');
     }
+  };
+
+  const resetFields = () => {
+    setPigName('');
+    setTagNumber('');
+    setGender('male');
+    setRace('');
   };
 
   // Edit Pig
