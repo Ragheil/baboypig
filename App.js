@@ -2,7 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import {
+  onAuthStateChanged,
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+} from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { StyleSheet } from 'react-native';
 
@@ -15,6 +21,7 @@ import FarmNameScreen from './components/FarmNameScreen';
 import ContactScreen from './components/contact/ContactScreen';
 import PigGroupsScreen from './components/pigGroup/PigGroupsScreen';
 import AddPigInfoScreen from './components/pigGroup/AddPigInfoScreen';
+import LoadingScreen from './components/LoadingScreen'; // Assuming you have a loading screen
 
 import { auth, firestore } from './firebase/config2';
 
@@ -23,14 +30,16 @@ const Stack = createStackNavigator();
 export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [farmName, setFarmName] = useState('');
+  const [farmName, setFarmName] = useState(''); // State for farm name
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [user, setUser] = useState(null);
   const [isLogin, setIsLogin] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isFarmNameSet, setIsFarmNameSet] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [justRegistered, setJustRegistered] = useState(false); // Track if the user just registered
+  const [loading, setLoading] = useState(false); // Loading state
+  const [isRegistering, setIsRegistering] = useState(false); // State to track registration status
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -38,31 +47,36 @@ export default function App() {
         setUser(user);
         console.log(`User logged in: ${user.email}`);
 
-        const docRef = doc(firestore, 'users', user.uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setFarmName(userData.farmName || '');
-          setFirstName(userData.firstName || '');
-          setLastName(userData.lastName || '');
-          setIsFarmNameSet(!!userData.farmName);
-        } else {
-          console.log('No such document in Firestore!');
-        }
+        // Fetch user data
+        await fetchUserData(user.uid);
       } else {
         console.log('User logged out.');
         setUser(null);
-        setFarmName('');
-        setFirstName('');
-        setLastName('');
         setIsFarmNameSet(false);
-        setIsNewUser(false);
       }
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Fetch user data from Firestore
+  const fetchUserData = async (uid) => {
+    setLoading(true); // Start loading
+    const docRef = doc(firestore, 'users', uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const userData = docSnap.data();
+      setFarmName(userData.farmName || '');
+      setFirstName(userData.firstName || '');
+      setLastName(userData.lastName || '');
+      setIsFarmNameSet(!!userData.farmName);
+      console.log('User data fetched from Firestore:', userData);
+    } else {
+      console.log('No such document in Firestore!');
+    }
+    setLoading(false); // End loading
+  };
 
   const handleAuthentication = async (firstName = '', lastName = '') => {
     try {
@@ -70,6 +84,7 @@ export default function App() {
         await signInWithEmailAndPassword(auth, email, password);
         console.log(`User signed in successfully: ${email}`);
       } else {
+        setIsRegistering(true); // Set to true when registering
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
@@ -78,11 +93,12 @@ export default function App() {
 
         console.log(`User created successfully: ${email}`);
         const userDoc = doc(firestore, 'users', user.uid);
-        await setDoc(userDoc, { firstName, lastName });
+        await setDoc(userDoc, { firstName, lastName, farmName: '' }); // Include farmName in the doc
 
         console.log(`User data saved for ${user.uid}: First Name: ${firstName}, Last Name: ${lastName}`);
-        setIsFarmNameSet(false);
-        setIsNewUser(true); // Mark as a new user
+
+        // Automatically fetch user data after registration
+        await fetchUserData(user.uid);
       }
     } catch (error) {
       console.error('Authentication error:', error.message);
@@ -90,15 +106,14 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    console.log('Logging out user:', user ? user.email : 'No user logged in'); // Debug log
     await signOut(auth);
     console.log('User logged out successfully.');
+
     setUser(null);
-    setFarmName('');
-    setFirstName('');
-    setLastName('');
     setIsLogin(true);
     setShowWelcome(true);
-    setIsNewUser(false); // Reset new user state
+    setIsFarmNameSet(false);
   };
 
   return (
@@ -112,56 +127,55 @@ export default function App() {
             {(props) => <WelcomeScreen {...props} onStart={() => setShowWelcome(false)} />}
           </Stack.Screen>
         ) : user ? (
-          isFarmNameSet ? (
-            <>
+          <>
+            {!isFarmNameSet && isRegistering ? ( // Only show FarmNameScreen after registration
               <Stack.Screen
-                name="Dashboard"
+                name="FarmName"
                 options={{ headerShown: false }}
               >
-                {(props) => <DashboardScreen {...props} firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />}
+                {(props) => (
+                  <FarmNameScreen
+                    {...props}
+                    onFarmNameSet={(name) => {
+                      setFarmName(name);
+                      setIsFarmNameSet(true);
+                      setIsRegistering(false); // Reset registration state
+                    }}
+                  />
+                )}
               </Stack.Screen>
-              <Stack.Screen
-                name="PigGroups"
-                component={PigGroupsScreen}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="AddPigInfoScreen"
-                component={AddPigInfoScreen}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="ContactScreen"
-                component={ContactScreen}
-                options={{ headerShown: false }}
-              />
-              {/* No need to show FarmNameScreen again if farm name is set */}
-            </>
-          ) : isNewUser ? (
+            ) : (
+              <>
+                {loading ? ( // Show loading screen while data is fetched
+                  <Stack.Screen name="Loading" component={LoadingScreen} options={{ headerShown: false }} />
+                ) : (
+                  <Stack.Screen
+                    name="Dashboard"
+                    options={{ headerShown: false }}
+                  >
+                    {(props) => (
+                      <DashboardScreen {...props} firstName={firstName} lastName={lastName} farmName={farmName} onLogout={handleLogout} />
+                    )}
+                  </Stack.Screen>
+                )}
+              </>
+            )}
             <Stack.Screen
-              name="FarmName"
+              name="PigGroups"
+              component={PigGroupsScreen}
               options={{ headerShown: false }}
-            >
-              {(props) => <FarmNameScreen {...props} onFarmNameSet={(name) => { setFarmName(name); setIsFarmNameSet(true); setIsNewUser(false); }} />}
-            </Stack.Screen>
-          ) : (
+            />
             <Stack.Screen
-              name="Login"
+              name="AddPigInfoScreen"
+              component={AddPigInfoScreen}
               options={{ headerShown: false }}
-            >
-              {(props) => (
-                <LoginScreen
-                  {...props}
-                  email={email}
-                  setEmail={setEmail}
-                  password={password}
-                  setPassword={setPassword}
-                  handleAuthentication={handleAuthentication}
-                  navigateToRegister={() => setIsLogin(false)}
-                />
-              )}
-            </Stack.Screen>
-          )
+            />
+            <Stack.Screen
+              name="ContactScreen"
+              component={ContactScreen}
+              options={{ headerShown: false }}
+            />
+          </>
         ) : isLogin ? (
           <Stack.Screen
             name="Login"
