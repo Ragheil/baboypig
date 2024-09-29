@@ -7,8 +7,10 @@ import deleteIcon from '../../assets/images/buttons/deleteIcon.png';
 import editIcon from '../../assets/images/buttons/editIcon.png';
 import viewIcon from '../../assets/images/buttons/viewIcon.png';
 import styles from '../../frontend/pigGroupStyles/AddPigInfoScreenStyles';
+import { useNavigation } from '@react-navigation/native'; // Import useNavigation
 
 export default function AddPigInfoScreen({ route }) {
+  const navigation = useNavigation(); // Get the navigation object
   const { pigGroupId, selectedBranch } = route.params; // Add selectedBranch param
   const [pigName, setPigName] = useState('');
   const [tagNumber, setTagNumber] = useState('');
@@ -23,6 +25,7 @@ export default function AddPigInfoScreen({ route }) {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedPig, setSelectedPig] = useState(null);
   const user = auth.currentUser;
+
 
   // Fetch Pig Group Name based on selected branch
   const fetchPigGroupName = async () => {
@@ -279,30 +282,53 @@ export default function AddPigInfoScreen({ route }) {
 
       {/* Pig Detail Modal */}
       <Modal
-        visible={detailModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setDetailModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            {selectedPig && (
-              <>
-                <Text style={styles.modalTitle}>Pig Details</Text>
-                <Text style={styles.pigDetailText}>Name: {selectedPig.pigName}</Text>
-                <Text style={styles.pigDetailText}>Tag Number: {selectedPig.tagNumber}</Text>
-                <Text style={styles.pigDetailText}>Gender: {selectedPig.gender}</Text>
-                <Text style={styles.pigDetailText}>Race: {selectedPig.race}</Text>
-                <Button
-                  title="Close"
-                  onPress={() => setDetailModalVisible(false)}
-                  color="#2196F3"
-                />
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
+  visible={detailModalVisible}
+  transparent={true}
+  animationType="slide"
+  onRequestClose={() => setDetailModalVisible(false)}
+>
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      {selectedPig && (
+        <>
+          <Text style={styles.modalTitle}>Pig Details</Text>
+          <Text style={styles.pigDetailText}>Name: {selectedPig.pigName}</Text>
+          <Text style={styles.pigDetailText}>Tag Number: {selectedPig.tagNumber}</Text>
+          <Text style={styles.pigDetailText}>Gender: {selectedPig.gender}</Text>
+          <Text style={styles.pigDetailText}>Race: {selectedPig.race}</Text>
+          
+          {/* View Medical Records Button */}
+          <Button
+  title="View Medical Records"
+  onPress={() => {
+    if (selectedPig) {
+      navigation.navigate('MedicalRecordScreen', {
+        userId: user.uid,
+        selectedBranch: selectedBranch, // Pass the selected branch
+        pigGroupId: pigGroupId,         // Pass the pig group ID
+        pigName: selectedPig.pigName,   // Pass the pig name
+        selectedPigId: selectedPig.id,   // Pass the selected pig ID
+      });
+    } else {
+      Alert.alert('Error', 'Please select a pig before viewing medical records.');
+    }
+  }}
+  color="#000000FF"
+/>
+
+
+
+          <Button
+            title="Close"
+            onPress={() => setDetailModalVisible(false)}
+            color="#F87F4AFF"
+          />
+        </>
+      )}
+    </View>
+  </View>
+</Modal>
+
     </View>
   );
 }

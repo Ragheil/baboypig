@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -22,6 +21,7 @@ import ContactScreen from './components/contact/ContactScreen';
 import PigGroupsScreen from './components/pigGroup/PigGroupsScreen';
 import AddPigInfoScreen from './components/pigGroup/AddPigInfoScreen';
 import LoadingScreen from './components/LoadingScreen'; // Assuming you have a loading screen
+import MedicalRecordScreen from './components/medical/MedicalRecordScreen'; // Add MedicalRecordScreen
 
 import { auth, firestore } from './firebase/config2';
 
@@ -181,7 +181,18 @@ export default function App() {
             />
             <Stack.Screen
               name="AddPigInfoScreen"
-              component={AddPigInfoScreen}
+              options={{ headerShown: false }}
+            >
+              {(props) => (
+                <AddPigInfoScreen
+                  {...props}
+                  onViewMedicalRecords={() => props.navigation.navigate('MedicalRecordScreen')} // Navigate to MedicalRecordScreen
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen
+              name="MedicalRecordScreen"
+              component={MedicalRecordScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen
