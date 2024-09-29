@@ -62,19 +62,33 @@ export default function App() {
   // Fetch user data from Firestore
   const fetchUserData = async (uid) => {
     setLoading(true); // Start loading
-    const docRef = doc(firestore, 'users', uid);
-    const docSnap = await getDoc(docRef);
+    
+    // Fetch the user's basic info (first name, last name) from the 'users' collection
+    const userDocRef = doc(firestore, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
 
-    if (docSnap.exists()) {
-      const userData = docSnap.data();
-      setFarmName(userData.farmName || '');
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data();
       setFirstName(userData.firstName || '');
       setLastName(userData.lastName || '');
-      setIsFarmNameSet(!!userData.farmName);
-      console.log('User data fetched from Firestore:', userData);
+      console.log('User basic data fetched from Firestore:', userData);
+
+      // Fetch the farm name from the 'farmBranches/Main Farm' sub-collection
+      const farmBranchDocRef = doc(firestore, 'users', uid, 'farmBranches', 'Main Farm');
+      const farmBranchDocSnap = await getDoc(farmBranchDocRef);
+
+      if (farmBranchDocSnap.exists()) {
+        const farmData = farmBranchDocSnap.data();
+        setFarmName(farmData.farmName || ''); // Set the farm name from 'Main Farm'
+        setIsFarmNameSet(!!farmData.farmName);
+        console.log('Farm data fetched from Firestore:', farmData);
+      } else {
+        console.log('No such farm branch document in Firestore!');
+      }
     } else {
-      console.log('No such document in Firestore!');
+      console.log('No such user document in Firestore!');
     }
+
     setLoading(false); // End loading
   };
 
