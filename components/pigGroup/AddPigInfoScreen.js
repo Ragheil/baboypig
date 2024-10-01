@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, Modal, TouchableOpacity, Image } from 'react-native';
 import { addDoc, collection, query, onSnapshot, doc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { auth, firestore } from '../../firebase/config2';
 import { Picker } from '@react-native-picker/picker';
+import DatePicker from 'react-native-date-picker';
 import deleteIcon from '../../assets/images/buttons/deleteIcon.png';
 import editIcon from '../../assets/images/buttons/editIcon.png';
 import viewIcon from '../../assets/images/buttons/viewIcon.png';
 import styles from '../../frontend/pigGroupStyles/AddPigInfoScreenStyles';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation
 
 export default function AddPigInfoScreen({ route }) {
@@ -24,9 +26,18 @@ export default function AddPigInfoScreen({ route }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedPig, setSelectedPig] = useState(null);
+  const [dateOfBirth, setDateOfBirth] = useState(new Date());  // Date of birth state
+  const [openDatePicker, setOpenDatePicker] = useState(false); // Corrected
+  const [vitality, setVitality] = useState('alive'); // Vitality state (alive/disabled)
+  const [isVitalityEditable, setIsVitalityEditable] = useState(false); // Controls the picker state
+  const [date, setDate] = useState(new Date());
+  const datePickerRef = useRef(null);
+
   const user = auth.currentUser;
 
-
+  const handleOpenDatePicker = () => {
+    setOpenDatePicker(true);
+  };
   // Fetch Pig Group Name based on selected branch
   const fetchPigGroupName = async () => {
     const pigCollectionPath = selectedBranch === 'Main Farm'
@@ -82,19 +93,15 @@ export default function AddPigInfoScreen({ route }) {
       Alert.alert('Validation Error', 'All fields are required.');
       return;
     }
-
-    if (!pigGroupId || !selectedBranch) {
-      Alert.alert('Error', 'Pig Group or Branch is not selected.');
-      return;
-    }
     const pigCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`;
-
     try {
-      const docRef = await addDoc(collection(firestore, pigCollectionPath), {
+      await addDoc(collection(firestore, pigCollectionPath), {
         pigName,
         tagNumber,
         gender,
         race,
+        dateOfBirth,  // Save date of birth
+        vitality,     // Save vitality
         createdAt: new Date(),
       });
       Alert.alert('Success', 'Pig added successfully!');
@@ -111,6 +118,8 @@ export default function AddPigInfoScreen({ route }) {
     setTagNumber('');
     setGender('male');
     setRace('');
+    setDateOfBirth(new Date());
+    setVitality('alive');
   };
 
   // Edit Pig
@@ -119,12 +128,6 @@ export default function AddPigInfoScreen({ route }) {
       Alert.alert('Validation Error', 'All fields are required.');
       return;
     }
-
-    if (await checkForDuplicates()) {
-      Alert.alert('Duplicate Error', 'Pig Name or Tag Number already exists.');
-      return;
-    }
-
     try {
       const pigCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs/${currentPigId}`;
       await updateDoc(doc(firestore, pigCollectionPath), {
@@ -132,6 +135,8 @@ export default function AddPigInfoScreen({ route }) {
         tagNumber,
         gender,
         race,
+        dateOfBirth,  // Update date of birth
+        vitality,     // Update vitality
       });
       Alert.alert('Success', 'Pig updated successfully!');
       setIsEditing(false);
@@ -143,7 +148,7 @@ export default function AddPigInfoScreen({ route }) {
       Alert.alert('Error', 'There was a problem updating the pig.');
     }
   };
-
+  
   // Delete Pig
   const handleDeletePig = (pigId) => {
     Alert.alert(
@@ -252,6 +257,22 @@ export default function AddPigInfoScreen({ route }) {
               value={tagNumber}
               onChangeText={setTagNumber}
             />
+                       {/* Date of Birth Picker */}
+            <TouchableOpacity onPress={handleOpenDatePicker}>
+              <Text>Select Date of Birth</Text>
+            </TouchableOpacity>
+
+            <DateTimePickerModal
+                 isVisible={openDatePicker}
+                mode="date"
+                date={dateOfBirth}
+                onConfirm={(date) => {
+                  setDateOfBirth(date);
+                  setOpenDatePicker(false);
+             }}
+              onCancel={() => setOpenDatePicker(false)}
+              />
+        
             <Picker
               selectedValue={gender}
               onValueChange={setGender}
@@ -266,6 +287,19 @@ export default function AddPigInfoScreen({ route }) {
               value={race}
               onChangeText={setRace}
             />
+
+            {/* Vitality Picker */}
+            <Text>Vitality</Text>
+            <Picker
+              selectedValue={vitality}
+              onValueChange={setVitality}
+              enabled={isEditing || isVitalityEditable}  // Enable when editing
+              style={styles.picker}
+            >
+              <Picker.Item label="Alive" value="alive" />
+              <Picker.Item label="Disabled" value="disabled" />
+              <Picker.Item label="Deceased" value="deceased" />
+            </Picker>
             <Button
               title={isEditing ? 'Update Pig' : 'Add Pig'}
               onPress={isEditing ? handleEditPig : handleAddPig}
@@ -282,21 +316,23 @@ export default function AddPigInfoScreen({ route }) {
 
       {/* Pig Detail Modal */}
       <Modal
-  visible={detailModalVisible}
-  transparent={true}
-  animationType="slide"
-  onRequestClose={() => setDetailModalVisible(false)}
->
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      {selectedPig && (
-        <>
-          <Text style={styles.modalTitle}>Pig Details</Text>
-          <Text style={styles.pigDetailText}>Name: {selectedPig.pigName}</Text>
-          <Text style={styles.pigDetailText}>Tag Number: {selectedPig.tagNumber}</Text>
-          <Text style={styles.pigDetailText}>Gender: {selectedPig.gender}</Text>
-          <Text style={styles.pigDetailText}>Race: {selectedPig.race}</Text>
-          
+        visible={detailModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setDetailModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {selectedPig && (
+              <>
+                <Text style={styles.modalTitle}>Pig Details</Text>
+                <Text style={styles.detailText}>Name: {selectedPig.pigName}</Text>
+                <Text style={styles.detailText}>Tag Number: {selectedPig.tagNumber}</Text>
+                <Text style={styles.detailText}>Gender: {selectedPig.gender}</Text>
+                <Text style={styles.detailText}>Race: {selectedPig.race}</Text>
+                <Text style={styles.detailText}>Date of Birth: {selectedPig.dateOfBirth.toDate().toDateString()}</Text>
+                <Text style={styles.detailText}>Vitality: {selectedPig.vitality}</Text>
+       
           {/* View Medical Records Button */}
           <Button
   title="View Medical Records"
@@ -316,18 +352,16 @@ export default function AddPigInfoScreen({ route }) {
   color="#000000FF"
 />
 
-
-
-          <Button
-            title="Close"
-            onPress={() => setDetailModalVisible(false)}
-            color="#F87F4AFF"
-          />
-        </>
-      )}
-    </View>
-  </View>
-</Modal>
+              </>
+            )}
+            <Button
+              title="Close"
+              onPress={() => setDetailModalVisible(false)}
+              color="#f44336"
+            />
+          </View>
+        </View>
+      </Modal>
 
     </View>
   );
