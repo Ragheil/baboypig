@@ -195,6 +195,7 @@ export default function AddPigInfoScreen({ route }) {
           setGender(item.gender);
           setRace(item.race);
           setCurrentPigId(item.id);
+          setVitality(item.vitality); // Set vitality when editing
           setIsEditing(true);
           setModalVisible(true);
         }}>
@@ -297,7 +298,6 @@ export default function AddPigInfoScreen({ route }) {
               style={styles.picker}
             >
               <Picker.Item label="Alive" value="alive" />
-              <Picker.Item label="Disabled" value="disabled" />
               <Picker.Item label="Deceased" value="deceased" />
             </Picker>
             <Button
