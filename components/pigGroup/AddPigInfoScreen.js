@@ -110,7 +110,9 @@ export default function AddPigInfoScreen({ route }) {
       Alert.alert('Validation Error', 'All fields are required.');
       return;
     }
+  
     const pigCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`;
+    
     try {
       await addDoc(collection(firestore, pigCollectionPath), {
         pigName,
@@ -121,14 +123,18 @@ export default function AddPigInfoScreen({ route }) {
         vitality,     // Save vitality
         createdAt: new Date(),
       });
+  
       Alert.alert('Success', 'Pig added successfully!');
-      resetFields();
-      setModalVisible(false);
+      
+      // Clear the input fields
+      resetFields(); 
+      setModalVisible(false); // Close the modal
     } catch (error) {
       console.error('Error adding pig:', error);
       Alert.alert('Error', 'There was a problem adding the pig.');
     }
   };
+  
 
   const resetFields = () => {
     setPigName('');
@@ -138,7 +144,6 @@ export default function AddPigInfoScreen({ route }) {
     setDateOfBirth(new Date());
     setVitality('alive');
   };
-
   // Edit Pig
   const handleEditPig = async () => {
     if (!pigName.trim() || !tagNumber.trim() || !gender || !race.trim()) {
