@@ -10,6 +10,8 @@ import viewIcon from '../../assets/images/buttons/viewIcon.png';
 import styles from '../../frontend/pigGroupStyles/AddPigInfoScreenStyles';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation
+import { useFocusEffect } from '@react-navigation/native'; // Import the useFocusEffect
+
 
 export default function AddPigInfoScreen({ route }) {
   const navigation = useNavigation(); // Get the navigation object
@@ -54,6 +56,21 @@ export default function AddPigInfoScreen({ route }) {
   useEffect(() => {
     fetchPigGroupName();
   }, [pigGroupId, user.uid]);
+
+
+ 
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset any necessary state or perform actions when the screen regains focus
+      // For example, you can reset any modals or form state here
+      setModalVisible(false); // Close any open modals
+      setDetailModalVisible(false); // Close any open detail modals
+      return () => {
+        // Cleanup if necessary when losing focus
+      };
+    }, [])
+  );
+
 
   // Fetch Pigs from the selected branch
   useEffect(() => {
