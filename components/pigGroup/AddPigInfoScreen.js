@@ -34,6 +34,8 @@ export default function AddPigInfoScreen({ route }) {
   const [isVitalityEditable, setIsVitalityEditable] = useState(false); // Controls the picker state
   const [date, setDate] = useState(new Date());
   const datePickerRef = useRef(null);
+  const [femalePigs, setFemalePigs] = useState([]); // State to store all female pigs
+  const [motherPig, setMotherPig] = useState(null);
 
   const user = auth.currentUser;
 
@@ -57,7 +59,21 @@ export default function AddPigInfoScreen({ route }) {
     fetchPigGroupName();
   }, [pigGroupId, user.uid]);
 
+  const fetchFemalePigs = async () => {
+    const pigsCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`;
+    const q = query(collection(firestore, pigsCollectionPath));
+    const querySnapshot = await getDocs(q);
 
+    const femalePigsList = querySnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(pig => pig.gender === 'female'); // Only get female pigs
+
+    setFemalePigs(femalePigsList);
+  };
+
+  useEffect(() => {
+    fetchFemalePigs();
+  }, [pigGroupId, user.uid, selectedBranch]);
  
   useFocusEffect(
     React.useCallback(() => {
@@ -110,40 +126,33 @@ export default function AddPigInfoScreen({ route }) {
       Alert.alert('Validation Error', 'All fields are required.');
       return;
     }
-  
+
     const pigCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`;
-    
+
     try {
       await addDoc(collection(firestore, pigCollectionPath), {
         pigName,
         tagNumber,
         gender,
         race,
-        dateOfBirth,  // Save date of birth
-        vitality,     // Save vitality
+        motherPig: motherPig ? motherPig.pigName : null, // Save selected mother pig
+        dateOfBirth,
         createdAt: new Date(),
       });
-  
+
       Alert.alert('Success', 'Pig added successfully!');
-      
-      // Clear the input fields
-      resetFields(); 
-      setModalVisible(false); // Close the modal
+      setPigName('');
+      setTagNumber('');
+      setGender('male');
+      setRace('');
+      setMotherPig(null); // Reset the mother selection
+      setDateOfBirth(new Date());
     } catch (error) {
       console.error('Error adding pig:', error);
       Alert.alert('Error', 'There was a problem adding the pig.');
     }
   };
   
-
-  const resetFields = () => {
-    setPigName('');
-    setTagNumber('');
-    setGender('male');
-    setRace('');
-    setDateOfBirth(new Date());
-    setVitality('alive');
-  };
   // Edit Pig
   const handleEditPig = async () => {
     if (!pigName.trim() || !tagNumber.trim() || !gender || !race.trim()) {
@@ -170,7 +179,16 @@ export default function AddPigInfoScreen({ route }) {
       Alert.alert('Error', 'There was a problem updating the pig.');
     }
   };
-  
+
+  const resetFields = () => {
+    setPigName('');
+    setTagNumber('');
+    setGender('male');
+    setRace('');
+    setDateOfBirth(new Date());
+    setVitality('alive');
+};
+
   // Delete Pig
   const handleDeletePig = (pigId) => {
     Alert.alert(
@@ -310,7 +328,18 @@ export default function AddPigInfoScreen({ route }) {
               value={race}
               onChangeText={setRace}
             />
-
+      {/* Mother Pig Picker */}
+      <Text>Select Mother Pig</Text>
+      <Picker
+        selectedValue={motherPig}
+        onValueChange={(itemValue) => setMotherPig(itemValue)}
+        style={styles.picker}
+      >
+        <Picker.Item label="Select Mother Pig" value={null} />
+        {femalePigs.map(pig => (
+          <Picker.Item key={pig.id} label={pig.pigName} value={pig} />
+        ))}
+      </Picker>
             {/* Vitality Picker */}
             <Text>Vitality</Text>
             <Picker
