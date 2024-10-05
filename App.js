@@ -20,8 +20,9 @@ import FarmNameScreen from './components/FarmNameScreen';
 import ContactScreen from './components/contact/ContactScreen';
 import PigGroupsScreen from './components/pigGroup/PigGroupsScreen';
 import AddPigInfoScreen from './components/pigGroup/AddPigInfoScreen';
-import LoadingScreen from './components/LoadingScreen'; // Assuming you have a loading screen
-import MedicalRecordScreen from './components/medical/MedicalRecordScreen'; // Add MedicalRecordScreen
+import LoadingScreen from './components/LoadingScreen';
+import MedicalRecordScreen from './components/medical/MedicalRecordScreen';
+import PregnancyRecordsScreen from './components/pregnancy/PregnancyRecordsScreen'; // Add the PregnancyRecordsScreen
 
 import { auth, firestore } from './firebase/config2';
 
@@ -198,6 +199,12 @@ export default function App() {
             <Stack.Screen
               name="ContactScreen"
               component={ContactScreen}
+              options={{ headerShown: false }}
+            />
+            {/* Add PregnancyRecordsScreen here */}
+            <Stack.Screen
+              name="PregnancyRecordsScreen"
+              component={PregnancyRecordsScreen}
               options={{ headerShown: false }}
             />
           </>

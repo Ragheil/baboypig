@@ -91,5 +91,17 @@ export default StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 5,
       },
+      pregnancyButton: {
+        backgroundColor: '#FFA500', // Orange color for pregnancy records button
+        padding: 10,
+        borderRadius: 5,
+        marginVertical: 10,
+        alignItems: 'center',
+      },
+      
+      buttonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+      },      
 
 });
