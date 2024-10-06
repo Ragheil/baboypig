@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, Modal, TouchableOpacity, Image } from 'react-native';
-import { addDoc, collection, query, onSnapshot, doc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { addDoc, collection, query, onSnapshot, doc, getDoc, updateDoc, deleteDoc, getDocs, where } from 'firebase/firestore';
 import { auth, firestore } from '../../firebase/config2';
 import { Picker } from '@react-native-picker/picker';
 import DatePicker from 'react-native-date-picker';
@@ -58,6 +58,56 @@ export default function AddPigInfoScreen({ route }) {
   useEffect(() => {
     fetchPigGroupName();
   }, [pigGroupId, user.uid]);
+
+
+
+  
+  const fetchAllPigsFromAllGroupsInBranch = async () => {
+    try {
+      // Fetch all pig groups under the selected branch
+      const pigGroupsCollectionRef = collection(
+        firestore,
+        `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups`
+      );
+  
+      const pigGroupsSnapshot = await getDocs(pigGroupsCollectionRef);
+  
+      let allPigs = [];
+  
+      // Loop through each pig group and fetch pigs within each group
+      for (const pigGroupDoc of pigGroupsSnapshot.docs) {
+        const pigGroupId = pigGroupDoc.id; // ID of each pig group
+  
+        // Now fetch pigs inside the current pig group
+        const pigsCollectionRef = collection(
+          firestore,
+          `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`
+        );
+        
+        const pigsSnapshot = await getDocs(pigsCollectionRef);
+        
+        // Add each pig to the allPigs array
+        const pigs = pigsSnapshot.docs.map((pigDoc) => ({
+          id: pigDoc.id,
+          ...pigDoc.data(),
+        }));
+  
+        allPigs = [...allPigs, ...pigs]; // Combine pigs from all groups
+      }
+  
+      // Set the final pigs list in the state
+      setPigs(allPigs);
+    } catch (error) {
+      console.error('Error fetching pigs from all groups:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedBranch) {
+      fetchAllPigsFromAllGroupsInBranch();
+    }
+  }, [selectedBranch]);
+
 
   const fetchFemalePigs = async () => {
     const pigsCollectionPath = `users/${user.uid}/farmBranches/${selectedBranch}/pigGroups/${pigGroupId}/pigs`;
@@ -330,16 +380,17 @@ export default function AddPigInfoScreen({ route }) {
             />
       {/* Mother Pig Picker */}
       <Text>Select Mother Pig</Text>
-      <Picker
-        selectedValue={motherPig}
-        onValueChange={(itemValue) => setMotherPig(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="Select Mother Pig" value={null} />
-        {femalePigs.map(pig => (
-          <Picker.Item key={pig.id} label={pig.pigName} value={pig} />
-        ))}
-      </Picker>
+<Picker
+      selectedValue={motherPig}
+      onValueChange={(itemValue) => setMotherPig(itemValue)}
+      style={{ height: 50, width: 150 }} // Adjust picker styles if needed
+    >
+      {pigs.map((pig) => (
+        <Picker.Item label={pig.pigName} value={pig.id} key={pig.id} />
+      ))}
+    </Picker>
+
+
             {/* Vitality Picker */}
             <Text>Vitality</Text>
             <Picker
