@@ -335,7 +335,7 @@ const handleAddBranch = async () => {
                 onChangeText={setUpdatedFirstName}
                 placeholder="First Name"
                 style={styles.input}
-              />
+              /> 
               <TextInput
                 value={updatedLastName}
                 onChangeText={setUpdatedLastName}
