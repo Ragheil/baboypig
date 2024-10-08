@@ -179,7 +179,7 @@ const getUserDetailsFromFirestore = async (uid) => {
     }
 };
 
-
+ 
 const handleBranchSwitch = (branchName) => {
   const selectedBranchObj = branches.find(branch => branch.id === branchName);
 
