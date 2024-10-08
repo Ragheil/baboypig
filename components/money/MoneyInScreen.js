@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { doc, setDoc, collection, addDoc  } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { firestore } from '../../firebase/config2'; // Adjust path as needed
 
 const MoneyInScreen = ({ route }) => {
@@ -8,25 +8,29 @@ const MoneyInScreen = ({ route }) => {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
 
- // console.log(`MoneyInScreen rendered with farmName: ${farmName}, selectedBranch: ${selectedBranch}, userId: ${userId}`);
-
   const handleAddMoney = async () => {
     if (!amount) {
       Alert.alert('Error', 'Please enter an amount.');
       return;
     }
-  
+
     try {
       const moneyRecord = {
         amount: parseFloat(amount),
         description,
         date: new Date().toISOString(), // Store the date of the transaction
+        category: 'moneyIn', // Add the category as 'moneyIn'
       };
-  
+
+      // Determine Firestore path based on whether it's the Main Farm or not
+      const path = selectedBranch === 'Main Farm'
+        ? `users/${userId}/farmBranches/Main Farm/moneyInRecords`
+        : `users/${userId}/farmBranches/${selectedBranch}/moneyInRecords`;
+
       // Create a new document in the moneyInRecords collection
-      const moneyInRecordsRef = collection(firestore, `users/${userId}/farmBranches/${selectedBranch}/moneyInRecords`);
+      const moneyInRecordsRef = collection(firestore, path);
       await addDoc(moneyInRecordsRef, moneyRecord); // This will create a new document with a unique ID
-  
+
       Alert.alert('Success', 'Money added successfully!');
       // Clear the input fields
       setAmount('');
