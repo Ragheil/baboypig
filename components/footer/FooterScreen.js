@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-export default function FooterScreen({ firstName, lastName, farmName, toggleSidebar }) {
+export default function FooterScreen({ firstName, lastName, farmName, selectedBranch, toggleSidebar, userId }) { // Added userId as prop
   const navigation = useNavigation();
   const [isModalVisible, setModalVisible] = useState(false);
 
   const toggleModal = () => {
-    console.log("Toggling modal visibility");
     setModalVisible(!isModalVisible);
   };
 
@@ -17,10 +16,23 @@ export default function FooterScreen({ firstName, lastName, farmName, toggleSide
   };
 
   const handleMoneyIn = () => {
-    console.log(`Current branch: ${farmName}`); // Log current branch when Money In is pressed
-    console.log('Money In pressed');
-    navigation.navigate('MoneyInScreen', { farmName }); // Navigate to MoneyInScreen
+    console.log(`Navigating to MoneyInScreen with farmName: ${farmName}, selectedBranch: ${selectedBranch}, userId: ${userId}`);
+    
+    // Ensure farmName and selectedBranch are defined
+    if (!farmName || !selectedBranch) {
+      console.error('Error: farmName or selectedBranch is undefined.');
+      Alert.alert('Error', 'Farm Name or Selected Branch is not set.');
+      return;
+    }
+  
+    navigation.navigate('MoneyInScreen', {
+      farmName: farmName,
+      selectedBranch: selectedBranch,
+      userId: userId,
+    });
   };
+  
+  
 
   const handleMoneyOut = () => {
     console.log(`Current branch: ${farmName}`); // Log current branch when Money Out is pressed

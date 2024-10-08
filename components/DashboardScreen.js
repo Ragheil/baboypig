@@ -38,44 +38,53 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
   const sidebarTranslateX = useState(new Animated.Value(Dimensions.get('window').width))[0];
   const navigation = useNavigation();
   const user = auth.currentUser;
+  
+ // const userId = user ? user.uid : null; // Ensure that userId is defined
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+        setUserId(user.uid);
+        // Fetch additional user details as needed
+        fetchUserDetails(user.uid);
+    }
+}, []);
 
   useEffect(() => {
     if (user) {
-      const userDocRef = doc(firestore, `users/${user.uid}/farmBranches/Main Farm`);
-      const unsubscribeUserDoc = onSnapshot(userDocRef, (doc) => {
-        const userData = doc.data();
-        const farmName = userData?.farmName || ''; // Get the farm name
-        setCurrentFarmName(`${farmName}`); // Set the main farm name here
-        setSelectedBranch(`Main Farm: ${farmName}`); // Set the selected branch to main farm
-  
-        const q = query(collection(firestore, `users/${user.uid}/farmBranches`));
-        const unsubscribeFarmBranches = onSnapshot(q, (snapshot) => {
-          const branchList = [];
-          snapshot.forEach((doc) => {
-            branchList.push({ id: doc.id, ...doc.data() });
-          });
-  
-          // Modify to include Main Farm with proper labeling
-  
-          // Update the names of other branches to include "Farm Branch:"
-          const updatedBranchList = branchList.map(branch => ({
-            id: branch.id,
-            name: branch.id === 'Main Farm' ? `Main Farm: ${farmName}` : `Farm Branch: ${branch.name}`
-          }));
-  
-          setBranches(updatedBranchList);
-        });
-  
-        return () => {
-          unsubscribeFarmBranches();
-          unsubscribeUserDoc();
-        };
-      });
-    }
-  }, [user]);
-  
-  
+        const userId = user.uid; // Get user ID
+        const userDocRef = doc(firestore, `users/${userId}/farmBranches/Main Farm`);
+        const unsubscribeUserDoc = onSnapshot(userDocRef, (doc) => {
+            const userData = doc.data();
+            const farmName = userData?.farmName || ''; 
+            setCurrentFarmName(`${farmName}`); 
+            setSelectedBranch(`Main Farm: ${farmName}`); 
 
+            const q = query(collection(firestore, `users/${userId}/farmBranches`)); // Use userId here
+            const unsubscribeFarmBranches = onSnapshot(q, (snapshot) => {
+                const branchList = [];
+                snapshot.forEach((doc) => {
+                    branchList.push({ id: doc.id, ...doc.data() });
+                });
+
+                const updatedBranchList = branchList.map(branch => ({
+                    id: branch.id,
+                    name: branch.id === 'Main Farm' ? `Main Farm: ${farmName}` : `Farm Branch: ${branch.name}`
+                }));
+
+                setBranches(updatedBranchList);
+            });
+
+            return () => {
+                unsubscribeFarmBranches();
+                unsubscribeUserDoc();
+            };
+        });
+    }
+}, [user]);
+
+  
   useEffect(() => {
     setCurrentFirstName(updatedFirstName);
     setCurrentLastName(updatedLastName);
@@ -90,6 +99,15 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     }).start();
     setSidebarVisible(!sidebarVisible);
   };
+
+  const fetchUserDetails = async (uid) => {
+    // Replace this with your actual data fetching logic
+    const userDetails = await getUserDetailsFromFirestore(uid);
+        setFirstName(userDetails.firstName);
+        setLastName(userDetails.lastName);
+        setFarmName(userDetails.farmName);
+};
+
 
   const closeSidebar = () => {
     if (sidebarVisible) {
@@ -136,56 +154,57 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     }
   };
 
- const handleBranchSwitch = (branchName) => {
-  const selectedBranchObj = branches.find(branch => branch.id === branchName);
 
-  if (branchName !== selectedBranch) {
-    Alert.alert(
-      "Switch Branch",
-      `Do you want to switch to the ${selectedBranchObj?.name || branchName} branch?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Yes",
-          onPress: () => {
-            setSelectedBranch(branchName);
-            setCurrentFarmName(selectedBranchObj?.name || branchName); // Update farm name dynamically
-            console.log(`Switched to ${selectedBranchObj?.name || branchName} branch.`);
+  const handleBranchSwitch = (branchName) => {
+    const selectedBranchObj = branches.find(branch => branch.id === branchName);
+  
+    if (branchName !== selectedBranch) {
+      Alert.alert(
+        "Switch Branch",
+        `Do you want to switch to the ${selectedBranchObj?.name || branchName} branch?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Yes",
+            onPress: () => {
+              setSelectedBranch(branchName); // Corrected from newBranch to branchName
+              setCurrentFarmName(selectedBranchObj?.name || branchName); // Update farm name dynamically
+              console.log(`Switched to ${selectedBranchObj?.name || branchName} branch.`);
+            },
           },
-        },
-      ],
-      { cancelable: true }
-    );
-  }
-};
-
-
-  const handleAddBranch = async () => {
-    if (!newBranchName.trim()) {
-      Alert.alert('Validation Error', 'Branch name is required!');
-      return;
-    }
-
-    try {
-      if (user) {
-        const branchRef = doc(firestore, `users/${user.uid}/farmBranches/${newBranchName}`);
-        const branchSnapshot = await getDoc(branchRef);
-        
-        if (branchSnapshot.exists()) {
-          Alert.alert('Branch Error', 'A branch with this name already exists!');
-          return;
-        }
-
-        await setDoc(branchRef, { name: newBranchName });
-        setNewBranchName('');
-        setBranchModalVisible(false);
-        console.log('New branch added:', newBranchName);
-      }
-    } catch (error) {
-      console.error('Error adding branch:', error);
+        ],
+        { cancelable: true }
+      );
     }
   };
+  
 
+
+const handleAddBranch = async () => {
+  if (!newBranchName.trim()) {
+    Alert.alert('Validation Error', 'Branch name is required!');
+    return;
+  }
+
+  try {
+    if (user) {
+      const branchRef = doc(firestore, `users/${user.uid}/farmBranches/${newBranchName}`);
+      const branchSnapshot = await getDoc(branchRef);
+      
+      if (branchSnapshot.exists()) {
+        Alert.alert('Branch Error', 'A branch with this name already exists!');
+        return;
+      }
+
+      await setDoc(branchRef, { name: newBranchName });
+      setNewBranchName('');
+      setBranchModalVisible(false);
+      console.log('New branch added:', newBranchName);
+    }
+  } catch (error) {
+    console.error('Error adding branch:', error);
+  }
+};
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -226,13 +245,16 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
           />
         </View>
 
-        <FooterScreen
-  firstName={firstName}
-  lastName={lastName}
-  farmName={currentFarmName}  // Pass the selected farm name (currentFarmName) here
-  onMoneyPress={() => console.log(`Current branch: ${currentFarmName}`)} // Function to log the current branch
-  toggleSidebar={toggleSidebar}
+        <FooterScreen 
+  firstName={firstName} 
+  lastName={lastName} 
+  farmName={farmName} 
+  selectedBranch={selectedBranch} 
+  toggleSidebar={toggleSidebar} 
+  userId={userId} 
 />
+
+
 
 
         <TouchableWithoutFeedback onPress={closeSidebar}>
