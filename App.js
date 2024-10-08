@@ -23,6 +23,8 @@ import AddPigInfoScreen from './components/pigGroup/AddPigInfoScreen';
 import LoadingScreen from './components/LoadingScreen';
 import MedicalRecordScreen from './components/medical/MedicalRecordScreen';
 import PregnancyRecordsScreen from './components/pregnancy/PregnancyRecordsScreen'; // Add the PregnancyRecordsScreen
+import MoneyInScreen from './components/money/MoneyInScreen'; // Import MoneyInScreen
+import MoneyOutScreen from './components/money/MoneyOutScreen'; // Import MoneyOutScreen
 
 import { auth, firestore } from './firebase/config2';
 
@@ -201,10 +203,19 @@ export default function App() {
               component={ContactScreen}
               options={{ headerShown: false }}
             />
-            {/* Add PregnancyRecordsScreen here */}
             <Stack.Screen
               name="PregnancyRecordsScreen"
               component={PregnancyRecordsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="MoneyInScreen" // Add MoneyInScreen to the navigator
+              component={MoneyInScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="MoneyOutScreen" // Add MoneyOutScreen to the navigator
+              component={MoneyOutScreen}
               options={{ headerShown: false }}
             />
           </>

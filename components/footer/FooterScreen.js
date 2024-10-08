@@ -7,33 +7,37 @@ export default function FooterScreen({ firstName, lastName, farmName, toggleSide
   const [isModalVisible, setModalVisible] = useState(false);
 
   const toggleModal = () => {
+    console.log("Toggling modal visibility");
     setModalVisible(!isModalVisible);
   };
 
   const closeModal = () => {
+    console.log("Closing modal");
     setModalVisible(false);
   };
 
   const handleMoneyIn = () => {
     console.log(`Current branch: ${farmName}`); // Log current branch when Money In is pressed
     console.log('Money In pressed');
+    navigation.navigate('MoneyInScreen', { farmName }); // Navigate to MoneyInScreen
   };
 
   const handleMoneyOut = () => {
     console.log(`Current branch: ${farmName}`); // Log current branch when Money Out is pressed
     console.log('Money Out pressed');
+    navigation.navigate('MoneyOutScreen', { farmName }); // Navigate to MoneyOutScreen
   };
 
   return (
     <View>
       {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerItem}>
+        <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../../assets/images/navigation/home.png')} style={styles.footerImage} />
           <Text style={styles.footerText}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.footerItem}>
+        <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('Transaction')}>
           <Image source={require('../../assets/images/navigation/transaction.png')} style={styles.footerImage} />
           <Text style={styles.footerText}>Transaction</Text>
         </TouchableOpacity>
