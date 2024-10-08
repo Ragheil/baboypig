@@ -227,11 +227,13 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
         </View>
 
         <FooterScreen
-          firstName={firstName}
-          lastName={lastName}
-          farmName={farmName}
-          toggleSidebar={toggleSidebar}
-        />
+  firstName={firstName}
+  lastName={lastName}
+  farmName={currentFarmName}  // Pass the selected farm name (currentFarmName) here
+  onMoneyPress={() => console.log(`Current branch: ${currentFarmName}`)} // Function to log the current branch
+  toggleSidebar={toggleSidebar}
+/>
+
 
         <TouchableWithoutFeedback onPress={closeSidebar}>
           <Animated.View style={[styles.sidebarOverlay, { opacity: sidebarVisible ? 0.5 : 0 }]} />
