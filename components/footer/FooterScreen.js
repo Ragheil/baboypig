@@ -37,8 +37,9 @@ export default function FooterScreen({ firstName, lastName, farmName, selectedBr
   const handleMoneyOut = () => {
     console.log(`Current branch: ${farmName}`); // Log current branch when Money Out is pressed
     console.log('Money Out pressed');
-    navigation.navigate('MoneyOutScreen', { farmName }); // Navigate to MoneyOutScreen
+    navigation.navigate('MoneyOutScreen', { farmName, selectedBranch, userId }); // Pass selectedBranch and userId
   };
+  
 
   return (
     <View>
