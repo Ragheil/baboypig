@@ -46,43 +46,60 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
     const user = auth.currentUser;
     if (user) {
         setUserId(user.uid);
-        // Fetch additional user details as needed
         fetchUserDetails(user.uid);
     }
 }, []);
 
-  useEffect(() => {
-    if (user) {
-        const userId = user.uid; // Get user ID
-        const userDocRef = doc(firestore, `users/${userId}/farmBranches/Main Farm`);
-        const unsubscribeUserDoc = onSnapshot(userDocRef, (doc) => {
-            const userData = doc.data();
-            const farmName = userData?.farmName || ''; 
-            setCurrentFarmName(`${farmName}`); 
-            setSelectedBranch(`Main Farm: ${farmName}`); 
+useEffect(() => {
+  if (user) {
+      const userId = user.uid; 
+      const userDocRef = doc(firestore, `users/${userId}/farmBranches/Main Farm`);
+      const unsubscribeUserDoc = onSnapshot(userDocRef, (doc) => {
+          const userData = doc.data();
+          const farmName = userData?.farmName || ''; 
+          setCurrentFarmName(`${farmName}`); 
+          setSelectedBranch(`Main Farm: ${farmName}`); 
 
-            const q = query(collection(firestore, `users/${userId}/farmBranches`)); // Use userId here
-            const unsubscribeFarmBranches = onSnapshot(q, (snapshot) => {
-                const branchList = [];
-                snapshot.forEach((doc) => {
-                    branchList.push({ id: doc.id, ...doc.data() });
-                });
+          const q = query(collection(firestore, `users/${userId}/farmBranches`));
+          const unsubscribeFarmBranches = onSnapshot(q, (snapshot) => {
+              const branchList = [];
+              snapshot.forEach((doc) => {
+                  branchList.push({ id: doc.id, ...doc.data() });
+              });
 
-                const updatedBranchList = branchList.map(branch => ({
-                    id: branch.id,
-                    name: branch.id === 'Main Farm' ? `Main Farm: ${farmName}` : `Farm Branch: ${branch.name}`
-                }));
+              const updatedBranchList = branchList.map(branch => ({
+                  id: branch.id,
+                  name: branch.id === 'Main Farm' ? `Main Farm: ${farmName}` : `Farm Branch: ${branch.name}`
+              }));
 
-                setBranches(updatedBranchList);
-            });
+              setBranches(updatedBranchList);
+          });
 
-            return () => {
-                unsubscribeFarmBranches();
-                unsubscribeUserDoc();
-            };
-        });
-    }
+          return () => {
+              unsubscribeFarmBranches();
+              unsubscribeUserDoc();
+          };
+      });
+  }
 }, [user]);
+
+
+
+const getUserDetailsFromFirestore = async (uid) => {
+  try {
+    const userDocRef = doc(firestore, `users/${uid}`);
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists()) {
+      return userDoc.data();
+    } else {
+      console.log('No such document!');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    throw error; // re-throw the error to handle it later if needed
+  }
+};
 
   
   useEffect(() => {
@@ -101,12 +118,18 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
   };
 
   const fetchUserDetails = async (uid) => {
-    // Replace this with your actual data fetching logic
-    const userDetails = await getUserDetailsFromFirestore(uid);
-        setFirstName(userDetails.firstName);
-        setLastName(userDetails.lastName);
-        setFarmName(userDetails.farmName);
-};
+    try {
+      const userDetails = await getUserDetailsFromFirestore(uid);
+      if (userDetails) {
+        setUpdatedFirstName(userDetails.firstName);
+        setUpdatedLastName(userDetails.lastName);
+        setUpdatedFarmName(userDetails.farmName);
+      }
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+    }
+  };
+  
 
 
   const closeSidebar = () => {
@@ -134,49 +157,52 @@ export default function DashboardScreen({ firstName, lastName, farmName, onLogou
 
   const handleUpdate = async () => {
     if (user) {
-      const mainBranchDoc = doc(firestore, `users/${user.uid}/farmBranches/Main Farm`);
+        const mainBranchDoc = doc(firestore, `users/${user.uid}/farmBranches/Main Farm`);
 
-      try {
-        await updateDoc(doc(firestore, `users/${user.uid}`), {
-          firstName: updatedFirstName,
-          lastName: updatedLastName,
-        });
+        try {
+            // Update user details
+            await updateDoc(doc(firestore, `users/${user.uid}`), {
+                firstName: updatedFirstName,
+                lastName: updatedLastName,
+            });
 
-        if (currentFarmName !== updatedFarmName) {
-          await updateDoc(mainBranchDoc, { farmName: updatedFarmName });
-          setCurrentFarmName(updatedFarmName);
+            // Update farm name if it's different from current
+            if (currentFarmName !== updatedFarmName) {
+                await updateDoc(mainBranchDoc, { farmName: updatedFarmName });
+                setCurrentFarmName(updatedFarmName);
+            }
+
+            setModalVisible(false);
+        } catch (error) {
+            console.error('Error updating account:', error);
         }
-
-        setModalVisible(false);
-      } catch (error) {
-        console.error('Error updating account:', error);
-      }
     }
-  };
+};
 
 
-  const handleBranchSwitch = (branchName) => {
-    const selectedBranchObj = branches.find(branch => branch.id === branchName);
-  
-    if (branchName !== selectedBranch) {
+const handleBranchSwitch = (branchName) => {
+  const selectedBranchObj = branches.find(branch => branch.id === branchName);
+
+  if (branchName !== selectedBranch) {
       Alert.alert(
-        "Switch Branch",
-        `Do you want to switch to the ${selectedBranchObj?.name || branchName} branch?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Yes",
-            onPress: () => {
-              setSelectedBranch(branchName); // Corrected from newBranch to branchName
-              setCurrentFarmName(selectedBranchObj?.name || branchName); // Update farm name dynamically
-              console.log(`Switched to ${selectedBranchObj?.name || branchName} branch.`);
-            },
-          },
-        ],
-        { cancelable: true }
+          "Switch Branch",
+          `Do you want to switch to the ${selectedBranchObj?.name || branchName} branch?`,
+          [
+              { text: "Cancel", style: "cancel" },
+              {
+                  text: "Yes",
+                  onPress: () => {
+                      setSelectedBranch(branchName);
+                      setCurrentFarmName(selectedBranchObj?.name || branchName);
+                      console.log(`Switched to ${selectedBranchObj?.name || branchName} branch.`);
+                  },
+              },
+          ],
+          { cancelable: true }
       );
-    }
-  };
+  }
+};
+
   
 
 
@@ -224,15 +250,15 @@ const handleAddBranch = async () => {
           </TouchableOpacity>
 
           <FlatList
-            data={pigGroups}
-            renderItem={({ item }) => (
-              <View style={styles.pigGroupSummary}>
-                <Text style={styles.pigGroupText}>{item.name}</Text>
-                <Text style={styles.pigCountText}>
-                  <Text style={styles.boldText}>{/* {item.pigCount || 0} Pigs */}</Text>
-                </Text>
-              </View>
-            )}
+                    data={pigGroups}
+                    renderItem={({ item }) => (
+                        <View style={styles.pigGroupSummary}>
+                            <Text style={styles.pigGroupText}>{item.name}</Text>
+                            <Text style={styles.pigCountText}>
+                                <Text style={styles.boldText}>{/* {item.pigCount || 0} Pigs */}</Text>
+                            </Text>
+                        </View>
+                    )}
             keyExtractor={(item) => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}

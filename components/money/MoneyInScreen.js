@@ -23,9 +23,9 @@ const MoneyInScreen = ({ route }) => {
         date: new Date().toISOString(), // Store the date of the transaction
       };
   
-      // Create a new document in the moneyRecords collection
-      const moneyRecordsRef = collection(firestore, `users/${userId}/farmBranches/${selectedBranch}/moneyRecords`);
-      await addDoc(moneyRecordsRef, moneyRecord); // This will create a new document with a unique ID
+      // Create a new document in the moneyInRecords collection
+      const moneyInRecordsRef = collection(firestore, `users/${userId}/farmBranches/${selectedBranch}/moneyInRecords`);
+      await addDoc(moneyInRecordsRef, moneyRecord); // This will create a new document with a unique ID
   
       Alert.alert('Success', 'Money added successfully!');
       // Clear the input fields
