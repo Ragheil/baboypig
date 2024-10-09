@@ -1,14 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker'; // Import Picker
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { firestore } from '../../firebase/config2'; // Adjust path as needed
+import DateTimePicker from '@react-native-community/datetimepicker'; // Import DateTimePicker for the date picker
 
 const MoneyOutScreen = ({ route }) => {
   const { farmName, selectedBranch, userId } = route.params; // Get farmName, selectedBranch, and userId from route params
   const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
+  const [remarks, setRemarks] = useState('');
   const [totalBalance, setTotalBalance] = useState(0); // State for total balance
   const [totalMoneyIn, setTotalMoneyIn] = useState(0); // State for total money in
+
+  // States for the expense category
+  const [category, setCategory] = useState('Bayad Kurente');
+  const [customCategory, setCustomCategory] = useState('');
+
+  // States for date picker
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Show text input when 'Other' is selected
+  const isCustomCategory = category === 'Other';
 
   useEffect(() => {
     fetchBalances(); // Fetch balances on mount
@@ -17,7 +30,6 @@ const MoneyOutScreen = ({ route }) => {
   // Function to fetch total money in and money out
   const fetchBalances = async () => {
     try {
-      // Fetch total Money In
       const moneyInPath = selectedBranch === 'Main Farm'
         ? `users/${userId}/farmBranches/Main Farm/moneyInRecords`
         : `users/${userId}/farmBranches/${selectedBranch}/moneyInRecords`;
@@ -25,17 +37,15 @@ const MoneyOutScreen = ({ route }) => {
       const moneyInRecordsRef = collection(firestore, moneyInPath);
       const inRecordsSnapshot = await getDocs(moneyInRecordsRef);
 
-      // Calculate total money in
       let totalIn = 0;
       inRecordsSnapshot.forEach((doc) => {
         const data = doc.data();
-        const recordAmount = parseFloat(data.amount) || 0; // Ensure the amount is parsed as a number
-        totalIn += recordAmount; // Sum up the amounts
+        const recordAmount = parseFloat(data.amount) || 0;
+        totalIn += recordAmount;
       });
 
-      setTotalMoneyIn(totalIn); // Update total money in state
+      setTotalMoneyIn(totalIn);
 
-      // Fetch total Money Out
       const moneyOutPath = selectedBranch === 'Main Farm'
         ? `users/${userId}/farmBranches/Main Farm/moneyOutRecords`
         : `users/${userId}/farmBranches/${selectedBranch}/moneyOutRecords`;
@@ -43,16 +53,14 @@ const MoneyOutScreen = ({ route }) => {
       const moneyOutRecordsRef = collection(firestore, moneyOutPath);
       const outRecordsSnapshot = await getDocs(moneyOutRecordsRef);
 
-      // Calculate total money out
       let totalOut = 0;
       outRecordsSnapshot.forEach((doc) => {
         const data = doc.data();
-        const recordAmount = parseFloat(data.amount) || 0; // Ensure the amount is parsed as a number
-        totalOut += recordAmount; // Sum up the amounts
+        const recordAmount = parseFloat(data.amount) || 0;
+        totalOut += recordAmount;
       });
 
-      // Calculate the total balance
-      setTotalBalance(totalIn - totalOut); // Update total balance state
+      setTotalBalance(totalIn - totalOut);
     } catch (error) {
       console.error('Error fetching balances:', error);
     }
@@ -66,33 +74,35 @@ const MoneyOutScreen = ({ route }) => {
 
     try {
       const moneyRecord = {
-        amount: parseFloat(amount), // Parse amount to ensure it's a number
-        description,
-        date: new Date().toISOString(), // Store the date of the transaction
-        category: 'moneyOut', // Add the category as 'moneyOut'
+        amount: parseFloat(amount),
+        remarks,
+        date: date.toISOString(), // Store selected date
+        category: isCustomCategory ? customCategory : category, // Use custom category if 'Other' is selected
       };
 
-      // Determine Firestore path based on whether it's the Main Farm or not
       const path = selectedBranch === 'Main Farm'
         ? `users/${userId}/farmBranches/Main Farm/moneyOutRecords`
         : `users/${userId}/farmBranches/${selectedBranch}/moneyOutRecords`;
 
-      // Create a new document in the moneyOutRecords collection
       const moneyOutRecordsRef = collection(firestore, path);
-      await addDoc(moneyOutRecordsRef, moneyRecord); // This will create a new document with a unique ID
+      await addDoc(moneyOutRecordsRef, moneyRecord);
 
       Alert.alert('Success', 'Money deducted successfully!');
+      fetchBalances();
 
-      // Fetch the updated total balance after deducting money
-      fetchBalances(); // Call the function to fetch updated balance
-
-      // Clear the input fields
       setAmount('');
-      setDescription('');
+      setRemarks('');
+      setCustomCategory('');
     } catch (error) {
       console.error('Error deducting money record:', error);
       Alert.alert('Error', 'Failed to deduct money. Please try again.');
     }
+  };
+
+  const onDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(false);
+    setDate(currentDate);
   };
 
   return (
@@ -100,7 +110,6 @@ const MoneyOutScreen = ({ route }) => {
       <Text style={styles.title}>Money Out</Text>
       <Text style={styles.farmName}>Current Branch: {selectedBranch || 'No branch selected'}</Text>
       <Text style={styles.balance}>Total Balance: PHP {totalBalance.toFixed(2)}</Text>
-    {/*  <Text style={styles.totalMoneyIn}>Total Money In: PHP {totalMoneyIn.toFixed(2)}</Text>*/}
 
       <TextInput
         style={styles.input}
@@ -109,11 +118,46 @@ const MoneyOutScreen = ({ route }) => {
         onChangeText={setAmount}
         keyboardType="numeric"
       />
+
+      {/* Category Picker */}
+      <Picker
+        selectedValue={category}
+        onValueChange={(itemValue) => setCategory(itemValue)}
+        style={styles.input}
+      >
+        <Picker.Item label="Bayad Kurente" value="Bayad Kurente" />
+        <Picker.Item label="Tax" value="Tax" />
+        <Picker.Item label="Water Bill" value="Water Bill" />
+        <Picker.Item label="Other" value="Other" />
+      </Picker>
+
+      {/* Show custom category input if 'Other' is selected */}
+      {isCustomCategory && (
+        <TextInput
+          style={styles.input}
+          placeholder="Enter custom category"
+          value={customCategory}
+          onChangeText={setCustomCategory}
+        />
+      )}
+
+      {/* Date Picker */}
+      <Button title="Select Date" onPress={() => setShowDatePicker(true)} />
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={onDateChange}
+        />
+      )}
+      <Text style={styles.selectedDate}>Selected Date: {date.toDateString()}</Text>
+
       <TextInput
         style={styles.input}
-        placeholder="Description (optional)"
-        value={description}
-        onChangeText={setDescription}
+        placeholder="Remarks (optional)"
+        value={remarks}
+        onChangeText={setRemarks}
       />
 
       <Button title="Deduct Money" onPress={handleDeductMoney} />
@@ -141,13 +185,7 @@ const styles = StyleSheet.create({
   balance: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4CAF50', // Green color for balance
-    marginBottom: 20,
-  },
-  totalMoneyIn: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2196F3', // Blue color for total money in
+    color: '#4CAF50',
     marginBottom: 20,
   },
   input: {
@@ -158,6 +196,10 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 5,
     backgroundColor: '#fff',
+  },
+  selectedDate: {
+    fontSize: 16,
+    marginVertical: 10,
   },
 });
 
