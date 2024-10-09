@@ -171,9 +171,25 @@ const TransactionScreen = ({ route }) => {
         html: htmlContent,
       });
   
+      // Define the destination path in the Downloads folder
+      const downloadsDir = FileSystem.documentDirectory + 'downloads/';
+      const fileName = 'PigEx Transaction Report.pdf';
+      const fileUri = downloadsDir + fileName;
+  
+      // Ensure the downloads directory exists
+      await FileSystem.makeDirectoryAsync(downloadsDir, { intermediates: true });
+  
+      // Move the PDF to the Downloads folder
+      await FileSystem.moveAsync({
+        from: uri,
+        to: fileUri,
+      });
+  
       // Share the PDF file
-      await Sharing.shareAsync(uri);
-      
+      await Sharing.shareAsync(fileUri, {
+        dialogTitle: 'Share PigEx Transaction Report',
+      });
+  
       Alert.alert('Success', 'PDF generated and ready to share!');
   
     } catch (error) {
