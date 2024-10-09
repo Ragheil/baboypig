@@ -127,13 +127,13 @@ const TransactionScreen = ({ route }) => {
       <Text style={styles.headerText}>Transaction Screen</Text>
 
       <View style={styles.infoContainer}>
-        <Text style={styles.infoText}>Selected Branch: {selectedBranch}</Text>
+        <Text style={styles.infoText}>Current Branch: {selectedBranch}</Text>
       {/*   <Text style={styles.infoText}>User ID: {userId}</Text>*/}
         <Text style={styles.subHeaderText}>Transactions</Text>
 
-    <Text style={styles.totalText}>Total Balance: ₱{totalBalance.toFixed(2)}</Text>
-    <Text style={styles.totalText}>Total Income: ₱{totalIncome.toFixed(2)}</Text>
-    <Text style={styles.totalText}>Total Expense: ₱{totalExpense.toFixed(2)}</Text>
+    <Text style={styles.totalBalanceText}>Total Balance: ₱{totalBalance.toFixed(2)}</Text>
+    <Text style={styles.totalIncomeText}>Total Income: ₱{totalIncome.toFixed(2)}</Text>
+    <Text style={styles.totalExpenseText}>Total Expense: ₱{totalExpense.toFixed(2)}</Text>
       </View>
 
       {/* ScrollView with RefreshControl for pull-to-refresh */}
@@ -188,25 +188,40 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
+    marginTop: 60
   },
   infoContainer: {
     marginBottom: 6,
   },
   infoText: {
-    fontSize: 18,
+    fontSize: 25,
     marginVertical: 5,
+    fontWeight: 'bold',
   },
   subHeaderText: {
     fontSize: 20,
     fontWeight: 'bold',
     marginVertical: 10,
   },
-  totalText: {
+  totalBalanceText: {
     fontSize: 18,
     fontWeight: 'bold',
     marginVertical: 5,
     color: '#007AFF', // Change color for visibility
+  },
+  totalIncomeText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 5,
+    color: '#058119FF',
+     // Change color for visibility
+  },
+  totalExpenseText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 5,
+    color: '#FF3C00FF', // Change color for visibility
   },
   transactionContainer: {
     marginBottom: 20,
