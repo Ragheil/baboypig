@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } 
 import { useNavigation } from '@react-navigation/native';
 import { collection, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import { firestore } from '../../firebase/config2'; // Adjust the path to your Firebase config
+import RNHTMLtoPDF from 'react-native-html-to-pdf'; // Import the library
 
 const TransactionScreen = ({ route }) => {
   const { selectedBranch, userId } = route.params;
@@ -122,18 +123,71 @@ const TransactionScreen = ({ route }) => {
     return acc;
   }, {});
 
+  // Function to generate PDF report
+  const generatePDF = async () => {
+    let htmlContent = `
+      <h1>Transaction Report</h1>
+      <h2>Branch: ${selectedBranch}</h2>
+      <h3>Total Balance: ₱${totalBalance.toFixed(2)}</h3>
+      <h3>Total Income: ₱${totalIncome.toFixed(2)}</h3>
+      <h3>Total Expense: ₱${totalExpense.toFixed(2)}</h3>
+      <table border="1" width="100%">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    // Populate the HTML table with transactions
+    for (const date in groupedTransactions) {
+      for (const transaction of groupedTransactions[date]) {
+        htmlContent += `
+          <tr>
+            <td>${formatDate(transaction.date)}</td>
+            <td>${transaction.category || 'N/A'}</td>
+            <td>${transaction.type === 'in' ? '+' : '-'} ₱${parseFloat(transaction.amount).toFixed(2)}</td>
+            <td>${transaction.remarks || 'No remarks provided.'}</td>
+          </tr>
+        `;
+      }
+    }
+
+    htmlContent += `
+        </tbody>
+      </table>
+    `;
+
+    const options = {
+      html: htmlContent,
+      fileName: `Transaction_Report_${selectedBranch}`,
+      directory: 'Documents',
+    };
+
+    try {
+      const file = await RNHTMLtoPDF.convert(options);
+      console.log('PDF file created at:', file.filePath);
+      alert(`PDF saved to: ${file.filePath}`);
+    } catch (error) {
+      console.error('Error creating PDF:', error);
+    }
+};
+
+
   return (
     <View style={styles.container}>
       <Text style={styles.headerText}>Transaction Screen</Text>
 
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>Current Branch: {selectedBranch}</Text>
-      {/*   <Text style={styles.infoText}>User ID: {userId}</Text>*/}
         <Text style={styles.subHeaderText}>Transactions</Text>
-
-    <Text style={styles.totalBalanceText}>Total Balance: ₱{totalBalance.toFixed(2)}</Text>
-    <Text style={styles.totalIncomeText}>Total Income: ₱{totalIncome.toFixed(2)}</Text>
-    <Text style={styles.totalExpenseText}>Total Expense: ₱{totalExpense.toFixed(2)}</Text>
+        <Text style={styles.totalBalanceText}>Total Balance: ₱{totalBalance.toFixed(2)}</Text>
+        <Text style={styles.totalIncomeText}>Total Income: ₱{totalIncome.toFixed(2)}</Text>
+        <Text style={styles.totalExpenseText}>Total Expense: ₱{totalExpense.toFixed(2)}</Text>
       </View>
 
       {/* ScrollView with RefreshControl for pull-to-refresh */}
@@ -143,8 +197,6 @@ const TransactionScreen = ({ route }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-       
-
         {Object.keys(groupedTransactions).length > 0 ? (
           Object.keys(groupedTransactions).map((date) => (
             <View key={date}>
@@ -159,17 +211,22 @@ const TransactionScreen = ({ route }) => {
                       {` ${transaction.type === 'in' ? '+' : '-'} ₱${parseFloat(transaction.amount).toFixed(2)}`}
                     </Text>
                   </Text>
-                  <Text style={styles.remarksText}>{transaction.remarks || 'No remarks provided.'}</Text>
+                  <Text style={styles.remarksText}>
+                    Remarks: {transaction.remarks || 'No remarks provided.'}
+                  </Text>
                 </View>
               ))}
             </View>
           ))
         ) : (
-          <Text>No transactions available.</Text>
+          <Text style={styles.noTransactionsText}>No transactions available.</Text>
         )}
       </ScrollView>
 
-      {/* Back button */}
+      <TouchableOpacity style={styles.pdfButton} onPress={generatePDF}>
+        <Text style={styles.pdfButtonText}>Generate PDF Report</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
         <Text style={styles.backButtonText}>Go Back</Text>
       </TouchableOpacity>
@@ -181,100 +238,102 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f0f0f0',
   },
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 15,
-    marginTop: 60
+    marginBottom: 20,
   },
   infoContainer: {
-    marginBottom: 6,
+    marginBottom: 20,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    elevation: 3,
   },
   infoText: {
-    fontSize: 25,
-    marginVertical: 5,
-    fontWeight: 'bold',
+    fontSize: 16,
   },
   subHeaderText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginTop: 10,
   },
   totalBalanceText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 5,
-    color: '#007AFF', // Change color for visibility
+    fontSize: 16,
+    color: 'green',
   },
   totalIncomeText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 5,
-    color: '#058119FF',
-     // Change color for visibility
+    fontSize: 16,
+    color: 'blue',
   },
   totalExpenseText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 5,
-    color: '#FF3C00FF', // Change color for visibility
+    fontSize: 16,
+    color: 'red',
   },
   transactionContainer: {
     marginBottom: 20,
   },
   dateText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginVertical: 10,
-    marginTop: 20,
   },
   transactionItem: {
-    padding: 10,
     backgroundColor: '#fff',
-    marginVertical: 5,
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
     elevation: 2,
   },
   transactionLabel: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    fontSize: 16,
   },
   categoryText: {
     fontWeight: 'bold',
-    fontSize: 16,
   },
   amountText: {
     fontSize: 16,
   },
   income: {
-    color: 'green', // Color for income
+    color: 'green',
   },
   expense: {
-    color: 'red', // Color for expense
+    color: 'red',
   },
   remarksText: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 5,
+    color: 'gray',
+  },
+  noTransactionsText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: 'gray',
+  },
+  pdfButton: {
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  pdfButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   backButton: {
-    backgroundColor: '#007AFF',
+    marginTop: 10,
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 8,
+    backgroundColor: '#6c757d',
     alignItems: 'center',
   },
   backButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
