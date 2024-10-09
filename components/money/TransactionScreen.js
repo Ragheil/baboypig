@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert  } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { collection, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import { firestore } from '../../firebase/config2'; // Adjust the path to your Firebase config
 import RNHTMLtoPDF from 'react-native-html-to-pdf'; // Import the library
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 
 const TransactionScreen = ({ route }) => {
   const { selectedBranch, userId } = route.params;
@@ -142,7 +145,7 @@ const TransactionScreen = ({ route }) => {
         </thead>
         <tbody>
     `;
-
+  
     // Populate the HTML table with transactions
     for (const date in groupedTransactions) {
       for (const transaction of groupedTransactions[date]) {
@@ -156,27 +159,28 @@ const TransactionScreen = ({ route }) => {
         `;
       }
     }
-
+  
     htmlContent += `
         </tbody>
       </table>
     `;
-
-    const options = {
-      html: htmlContent,
-      fileName: `Transaction_Report_${selectedBranch}`,
-      directory: 'Documents',
-    };
-
+  
     try {
-      const file = await RNHTMLtoPDF.convert(options);
-      console.log('PDF file created at:', file.filePath);
-      alert(`PDF saved to: ${file.filePath}`);
+      // Create the PDF
+      const { uri } = await Print.printToFileAsync({
+        html: htmlContent,
+      });
+  
+      // Share the PDF file
+      await Sharing.shareAsync(uri);
+      
+      Alert.alert('Success', 'PDF generated and ready to share!');
+  
     } catch (error) {
-      console.error('Error creating PDF:', error);
+      console.error('Error creating or sharing PDF:', error);
+      Alert.alert('Error', 'Could not create PDF file.');
     }
-};
-
+  };
 
   return (
     <View style={styles.container}>
