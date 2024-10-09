@@ -25,6 +25,7 @@ import MedicalRecordScreen from './components/medical/MedicalRecordScreen';
 import PregnancyRecordsScreen from './components/pregnancy/PregnancyRecordsScreen'; // Add the PregnancyRecordsScreen
 import MoneyInScreen from './components/money/MoneyInScreen'; // Import MoneyInScreen
 import MoneyOutScreen from './components/money/MoneyOutScreen'; // Import MoneyOutScreen
+import TransactionScreen from './components/money/TransactionScreen'; // Add this import
 
 import { auth, firestore } from './firebase/config2';
 
@@ -145,7 +146,7 @@ export default function App() {
           </Stack.Screen>
         ) : user ? (
           <>
-            {!isFarmNameSet && isRegistering ? ( // Only show FarmNameScreen after registration
+            {!isFarmNameSet && isRegistering ? (
               <Stack.Screen
                 name="FarmName"
                 options={{ headerShown: false }}
@@ -156,14 +157,14 @@ export default function App() {
                     onFarmNameSet={(name) => {
                       setFarmName(name);
                       setIsFarmNameSet(true);
-                      setIsRegistering(false); // Reset registration state
+                      setIsRegistering(false);
                     }}
                   />
                 )}
               </Stack.Screen>
             ) : (
               <>
-                {loading ? ( // Show loading screen while data is fetched
+                {loading ? (
                   <Stack.Screen name="Loading" component={LoadingScreen} options={{ headerShown: false }} />
                 ) : (
                   <Stack.Screen
@@ -189,7 +190,7 @@ export default function App() {
               {(props) => (
                 <AddPigInfoScreen
                   {...props}
-                  onViewMedicalRecords={() => props.navigation.navigate('MedicalRecordScreen')} // Navigate to MedicalRecordScreen
+                  onViewMedicalRecords={() => props.navigation.navigate('MedicalRecordScreen')}
                 />
               )}
             </Stack.Screen>
@@ -209,13 +210,18 @@ export default function App() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="MoneyInScreen" // Add MoneyInScreen to the navigator
+              name="MoneyInScreen"
               component={MoneyInScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="MoneyOutScreen" // Add MoneyOutScreen to the navigator
+              name="MoneyOutScreen"
               component={MoneyOutScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="TransactionScreen" // Add TransactionScreen to the stack
+              component={TransactionScreen}
               options={{ headerShown: false }}
             />
           </>

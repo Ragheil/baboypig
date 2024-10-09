@@ -50,10 +50,20 @@ export default function FooterScreen({ firstName, lastName, farmName, selectedBr
           <Text style={styles.footerText}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('Transaction')}>
-          <Image source={require('../../assets/images/navigation/transaction.png')} style={styles.footerImage} />
-          <Text style={styles.footerText}>Transaction</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+            style={styles.footerItem}
+            onPress={() => navigation.navigate('TransactionScreen', { 
+              firstName, 
+              lastName, 
+              farmName, 
+              selectedBranch, 
+              userId 
+            })}
+          >
+            <Image source={require('../../assets/images/navigation/transaction.png')} style={styles.footerImage} />
+            <Text style={styles.footerText}>Transaction</Text>
+          </TouchableOpacity>
+
 
         {/* Plus button to open modal */}
         <TouchableOpacity style={styles.footerItem} onPress={toggleModal}>
