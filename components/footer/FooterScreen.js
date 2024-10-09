@@ -45,7 +45,7 @@ export default function FooterScreen({ firstName, lastName, farmName, selectedBr
     <View>
       {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('Dashboard')}>
           <Image source={require('../../assets/images/navigation/home.png')} style={styles.footerImage} />
           <Text style={styles.footerText}>Home</Text>
         </TouchableOpacity>
