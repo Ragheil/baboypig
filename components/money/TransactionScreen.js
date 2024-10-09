@@ -8,8 +8,7 @@ const TransactionScreen = ({ route }) => {
   const { selectedBranch, userId } = route.params;
   const navigation = useNavigation();
 
-  const [moneyInRecords, setMoneyInRecords] = useState([]); // State for incoming transactions
-  const [moneyOutRecords, setMoneyOutRecords] = useState([]); // State for outgoing transactions
+  const [transactions, setTransactions] = useState([]); // State for all transactions
   const [userDetails, setUserDetails] = useState({
     firstName: '',
     lastName: '',
@@ -58,12 +57,10 @@ const TransactionScreen = ({ route }) => {
       let incoming = [];
       let incomeTotal = 0;
       inRecordsSnapshot.forEach((doc) => {
-        const recordData = { id: doc.id, ...doc.data() };
+        const recordData = { id: doc.id, ...doc.data(), type: 'in' }; // Add type for incoming
         incoming.push(recordData);
         incomeTotal += parseFloat(recordData.amount) || 0; // Calculate total income
       });
-      setMoneyInRecords(incoming);
-      setTotalIncome(incomeTotal); // Update total income state
 
       // Fetch outgoing records
       const moneyOutPath = selectedBranch === 'Main Farm'
@@ -76,11 +73,19 @@ const TransactionScreen = ({ route }) => {
       let outgoing = [];
       let expenseTotal = 0;
       outRecordsSnapshot.forEach((doc) => {
-        const recordData = { id: doc.id, ...doc.data() };
+        const recordData = { id: doc.id, ...doc.data(), type: 'out' }; // Add type for outgoing
         outgoing.push(recordData);
         expenseTotal += parseFloat(recordData.amount) || 0; // Calculate total expense
       });
-      setMoneyOutRecords(outgoing);
+
+      // Combine incoming and outgoing records
+      const combinedTransactions = [...incoming, ...outgoing];
+
+      // Sort combined transactions by date (latest first)
+      combinedTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      setTransactions(combinedTransactions); // Update transactions state
+      setTotalIncome(incomeTotal); // Update total income state
       setTotalExpense(expenseTotal); // Update total expense state
     } catch (error) {
       console.error('Error fetching transaction records:', error);
@@ -98,8 +103,24 @@ const TransactionScreen = ({ route }) => {
     navigation.goBack();
   };
 
-  // Calculate total balance
+  // Function to calculate total balance
   const totalBalance = totalIncome - totalExpense;
+
+  // Function to format date
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Group transactions by date
+  const groupedTransactions = transactions.reduce((acc, transaction) => {
+    const dateKey = formatDate(transaction.date); // Use formatted date as key
+    if (!acc[dateKey]) {
+      acc[dateKey] = [];
+    }
+    acc[dateKey].push(transaction); // Push transaction into the respective date array
+    return acc;
+  }, {});
 
   return (
     <View style={styles.container}>
@@ -107,9 +128,12 @@ const TransactionScreen = ({ route }) => {
 
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>Selected Branch: {selectedBranch}</Text>
-        <Text style={styles.infoText}>User ID: {userId}</Text>
-        <Text style={styles.totalText}>Total Balance: ${totalBalance.toFixed(2)}</Text>
+      {/*   <Text style={styles.infoText}>User ID: {userId}</Text>*/}
+        <Text style={styles.subHeaderText}>Transactions</Text>
 
+    <Text style={styles.totalText}>Total Balance: ₱{totalBalance.toFixed(2)}</Text>
+    <Text style={styles.totalText}>Total Income: ₱{totalIncome.toFixed(2)}</Text>
+    <Text style={styles.totalText}>Total Expense: ₱{totalExpense.toFixed(2)}</Text>
       </View>
 
       {/* ScrollView with RefreshControl for pull-to-refresh */}
@@ -119,40 +143,29 @@ const TransactionScreen = ({ route }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Text style={styles.subHeaderText}>Money In Records</Text>
-        <Text style={styles.totalText}>Total Income: ${totalIncome.toFixed(2)}</Text>
-        
-        {/*  <Text style={styles.totalText}>Total Balance: ${totalBalance.toFixed(2)}</Text> */}
        
 
-        {moneyInRecords.length > 0 ? (
-          moneyInRecords.map((transaction, index) => (
-            <View key={transaction.id} style={styles.transactionItem}>
-              <Text style={styles.infoText}>
-                {`Transaction ${index + 1}: Income - $${parseFloat(transaction.amount).toFixed(2)}`}
-              </Text>
+        {Object.keys(groupedTransactions).length > 0 ? (
+          Object.keys(groupedTransactions).map((date) => (
+            <View key={date}>
+              <Text style={styles.dateText}>{date}</Text>
+              {groupedTransactions[date].map((transaction) => (
+                <View key={transaction.id} style={styles.transactionItem}>
+                  <Text style={styles.transactionLabel}>
+                    <Text style={styles.categoryText}>
+                      {transaction.category || 'N/A'}: 
+                    </Text>
+                    <Text style={[styles.amountText, transaction.type === 'in' ? styles.income : styles.expense]}>
+                      {` ${transaction.type === 'in' ? '+' : '-'} ₱${parseFloat(transaction.amount).toFixed(2)}`}
+                    </Text>
+                  </Text>
+                  <Text style={styles.remarksText}>{transaction.remarks || 'No remarks provided.'}</Text>
+                </View>
+              ))}
             </View>
           ))
         ) : (
-          <Text>No incoming transactions available.</Text>
-        )}
-
-        <Text style={styles.subHeaderText}>Money Out Records</Text>
-        <Text style={styles.totalText}>Total Expense: ${totalExpense.toFixed(2)}</Text>
-        
-        {/*  <Text style={styles.totalText}>Total Balance: ${totalBalance.toFixed(2)}</Text>*/}
-       
-
-        {moneyOutRecords.length > 0 ? (
-          moneyOutRecords.map((transaction, index) => (
-            <View key={transaction.id} style={styles.transactionItem}>
-              <Text style={styles.infoText}>
-                {`Transaction ${index + 1}: Expense - $${parseFloat(transaction.amount).toFixed(2)}`}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <Text>No outgoing transactions available.</Text>
+          <Text>No transactions available.</Text>
         )}
       </ScrollView>
 
@@ -178,7 +191,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   infoContainer: {
-    marginBottom: 30,
+    marginBottom: 6,
   },
   infoText: {
     fontSize: 18,
@@ -198,6 +211,12 @@ const styles = StyleSheet.create({
   transactionContainer: {
     marginBottom: 20,
   },
+  dateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    marginTop: 20,
+  },
   transactionItem: {
     padding: 10,
     backgroundColor: '#fff',
@@ -209,18 +228,38 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  backButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#007AFF',
-    borderRadius: 10,
+  transactionLabel: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    alignSelf: 'center',
+  },
+  categoryText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  amountText: {
+    fontSize: 16,
+  },
+  income: {
+    color: 'green', // Color for income
+  },
+  expense: {
+    color: 'red', // Color for expense
+  },
+  remarksText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
+  },
+  backButton: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
   },
   backButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 
