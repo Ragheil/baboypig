@@ -130,7 +130,7 @@ const TransactionScreen = ({ route }) => {
   const generatePDF = async () => {
     let htmlContent = `
       <h1>Transaction Report</h1>
-      <h2>Branch: ${selectedBranch}</h2>
+      <h2> Current Branch: ${selectedBranch}</h2>
       <h3>Total Balance: ₱${totalBalance.toFixed(2)}</h3>
       <h3>Total Income: ₱${totalIncome.toFixed(2)}</h3>
       <h3>Total Expense: ₱${totalExpense.toFixed(2)}</h3>
