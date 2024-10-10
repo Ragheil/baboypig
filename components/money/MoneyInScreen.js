@@ -219,8 +219,9 @@ const MoneyInScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Money In</Text>
+      <Text style={styles.title}>Money In: {selectedBranch || 'No branch selected'} Branch</Text>
       <Text style={styles.balance}>Total Balance: ${totalBalance.toFixed(2)}</Text>
+      <Text style={styles.farmName}>Current Branch: {selectedBranch || 'No branch selected'}</Text>
       <FlatList
         data={moneyRecords}
         renderItem={renderMoneyRecord}
@@ -384,6 +385,18 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginTop: 10,
   },
+  farmName: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    marginTop: 60
+
+  },
+
 });
 
 export default MoneyInScreen;

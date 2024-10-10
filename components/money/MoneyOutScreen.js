@@ -223,7 +223,9 @@ const MoneyOutScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.balanceText}>Current Total Balance: PHP {totalBalance.toFixed(2)}</Text>
+      <Text style={styles.title}>Money Out</Text>
+      <Text style={styles.farmName}>Current Branch: {selectedBranch || 'No branch selected'}</Text>
+      <Text style={styles.balanceText}>Current Balance: PHP {totalBalance.toFixed(2)}</Text>
       <FlatList
         data={moneyRecords}
         renderItem={renderMoneyRecord}
@@ -233,6 +235,7 @@ const MoneyOutScreen = ({ route }) => {
 
       <Pressable style={styles.addButton} onPress={() => setModalVisible(true)}>
         <Text style={styles.buttonText}>Add Money Out</Text>
+        
       </Pressable>
 
       <Modal visible={isModalVisible} animationType="slide">
@@ -271,19 +274,22 @@ const MoneyOutScreen = ({ route }) => {
             
           )}
                {/* Button to show date picker */}
-     <Pressable style={styles.addButton} onPress={() => setShowDatePicker(true)}>
-          <Text style={styles.buttonText}>Select Date</Text>
-        </Pressable>
-
-        {/* Date picker */}
-        {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-          />
-        )}
+               <Text style={styles.dateLabel}>Date:</Text>
+          <Pressable onPress={() => setShowDatePicker(true)}>
+            <Text style={styles.dateText}>{date.toLocaleDateString()}</Text>
+          </Pressable>
+          {showDatePicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                const currentDate = selectedDate || date;
+                setShowDatePicker(false);
+                setDate(currentDate);
+              }}
+            />
+          )}
           <Pressable style={styles.addButton} onPress={isEditing ? handleEditMoney : handleAddMoney}>
             <Text style={styles.buttonText}>{isEditing ? 'Update' : 'Add'}</Text>
           </Pressable>
@@ -368,6 +374,21 @@ const styles = StyleSheet.create({
     height: 50,
     width: '100%',
   },
+  farmName: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    marginTop: 60
+  },
+  dateLabel: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+
 });
 
 export default MoneyOutScreen;
