@@ -8,6 +8,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import TransactionScreenStyles from '../../frontend/money/TransactionScreenStyles'; // Adjust the path as necessary
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker'; // Import date picker
 
 const TransactionScreen = ({ route }) => {
   const { selectedBranch, userId } = route.params;
@@ -22,6 +23,10 @@ const TransactionScreen = ({ route }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0); // Added state for total balance
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
 
   useEffect(() => {
     const unsubscribeUser = fetchUserDetails();
@@ -58,11 +63,9 @@ const TransactionScreen = ({ route }) => {
       const inRecordsSnapshot = await getDocs(moneyInRecordsRef);
 
       let incoming = [];
-      let incomeTotal = 0;
       inRecordsSnapshot.forEach((doc) => {
         const recordData = { id: doc.id, ...doc.data(), type: 'in' };
         incoming.push(recordData);
-        incomeTotal += parseFloat(recordData.amount) || 0;
       });
 
       const moneyOutPath = selectedBranch === 'Main Farm'
@@ -73,19 +76,15 @@ const TransactionScreen = ({ route }) => {
       const outRecordsSnapshot = await getDocs(moneyOutRecordsRef);
 
       let outgoing = [];
-      let expenseTotal = 0;
       outRecordsSnapshot.forEach((doc) => {
         const recordData = { id: doc.id, ...doc.data(), type: 'out' };
         outgoing.push(recordData);
-        expenseTotal += parseFloat(recordData.amount) || 0;
       });
 
       const combinedTransactions = [...incoming, ...outgoing];
-      combinedTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-
       setTransactions(combinedTransactions);
-      setTotalIncome(incomeTotal);
-      setTotalExpense(expenseTotal);
+      setFilteredTransactions(combinedTransactions); // Set initial filtered transactions
+      calculateTotals(combinedTransactions); // Calculate initial totals
     } catch (error) {
       console.error('Error fetching transaction records:', error);
     }
@@ -101,14 +100,58 @@ const TransactionScreen = ({ route }) => {
     navigation.goBack();
   };
 
-  const totalBalance = totalIncome - totalExpense;
+  const calculateTotals = (transactions) => {
+    let incomeTotal = 0;
+    let expenseTotal = 0;
+
+    transactions.forEach((transaction) => {
+      if (transaction.type === 'in') {
+        incomeTotal += parseFloat(transaction.amount) || 0;
+      } else {
+        expenseTotal += parseFloat(transaction.amount) || 0;
+      }
+    });
+
+    setTotalIncome(incomeTotal);
+    setTotalExpense(expenseTotal);
+    setTotalBalance(incomeTotal - expenseTotal); // Update balance based on new totals
+  };
 
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const groupedTransactions = transactions.reduce((acc, transaction) => {
+  const filterTransactionsByDate = () => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const filtered = transactions.filter((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= start && transactionDate <= end;
+    });
+    setFilteredTransactions(filtered);
+    calculateTotals(filtered); // Calculate totals based on filtered transactions
+  };
+
+  const openDatePicker = (type) => {
+    DateTimePickerAndroid.open({
+      value: type === 'start' ? startDate : endDate,
+      onChange: (event, selectedDate) => {
+        if (selectedDate) {
+          if (type === 'start') {
+            setStartDate(selectedDate);
+          } else {
+            setEndDate(selectedDate);
+          }
+          filterTransactionsByDate();
+        }
+      },
+      mode: 'date',
+      is24Hour: true,
+    });
+  };
+
+  const groupedTransactions = filteredTransactions.reduce((acc, transaction) => {
     const dateKey = formatDate(transaction.date);
     if (!acc[dateKey]) {
       acc[dateKey] = [];
@@ -135,8 +178,7 @@ const TransactionScreen = ({ route }) => {
         </thead>
         <tbody>
     `;
-  
-    // Populate the HTML table with transactions
+
     for (const date in groupedTransactions) {
       for (const transaction of groupedTransactions[date]) {
         htmlContent += `
@@ -149,47 +191,42 @@ const TransactionScreen = ({ route }) => {
         `;
       }
     }
-  
+
     htmlContent += `
         </tbody>
       </table>
     `;
-  
+
     try {
-      // Create the PDF
       const { uri } = await Print.printToFileAsync({
         html: htmlContent,
       });
-  
-      // Define the destination path in the Downloads folder
+
       const downloadsDir = FileSystem.documentDirectory + 'downloads/';
       const fileName = 'PigEx Transaction Report.pdf';
       const fileUri = downloadsDir + fileName;
-  
-      // Ensure the downloads directory exists
+
       await FileSystem.makeDirectoryAsync(downloadsDir, { intermediates: true });
-  
-      // Move the PDF to the Downloads folder
       await FileSystem.moveAsync({
         from: uri,
         to: fileUri,
       });
-  
-      // Share the PDF file
+
       await Sharing.shareAsync(fileUri, {
         dialogTitle: 'Share PigEx Transaction Report',
       });
-  
+
       Alert.alert('Success', 'PDF generated and ready to share!');
-  
+
     } catch (error) {
       console.error('Error creating or sharing PDF:', error);
       Alert.alert('Error', 'Could not create PDF file.');
     }
   };
+
   return (
     <View style={TransactionScreenStyles.container}>
-      <Text style={TransactionScreenStyles.headerText}> Transaction  </Text>
+      <Text style={TransactionScreenStyles.headerText}> Transaction </Text>
       <View style={TransactionScreenStyles.infoContainer}>
         <Text style={TransactionScreenStyles.infoText}>
           Farm Name: {selectedBranch}
@@ -205,19 +242,28 @@ const TransactionScreen = ({ route }) => {
         </Text>
       </View>
 
+      <View>
+        <TouchableOpacity onPress={() => openDatePicker('start')}>
+          <Text>Select Start Date: {startDate.toLocaleDateString()}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => openDatePicker('end')}>
+          <Text>Select End Date: {endDate.toLocaleDateString()}</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {transactions.length > 0 ? (
+        {filteredTransactions.length > 0 ? (
           Object.entries(groupedTransactions).map(([date, transactions]) => (
             <View key={date} style={TransactionScreenStyles.transactionContainer}>
               <Text style={TransactionScreenStyles.dateText}>{date}</Text>
               {transactions.map((transaction) => (
                 <View key={transaction.id} style={TransactionScreenStyles.transactionItem}>
                   <Text style={TransactionScreenStyles.transactionLabel}>
-                    <Text style={TransactionScreenStyles.categoryText}>{transaction.category || 'N/A'}</Text>: 
+                    <Text style={TransactionScreenStyles.categoryText}>{transaction.category || 'N/A'}</Text>:
                     <Text style={transaction.type === 'in' ? TransactionScreenStyles.income : TransactionScreenStyles.expense}>
                       ₱{parseFloat(transaction.amount).toFixed(2)}
                     </Text>
