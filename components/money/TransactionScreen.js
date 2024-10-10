@@ -229,7 +229,7 @@ const TransactionScreen = ({ route }) => {
             <tr>
               <th style="width: 15%; text-align: center;">Date</th>
               <th style="width: 30%; text-align: center;">Description</th>
-              <th style="width: 10%; text-align: center;">Type</th>
+              <th style="width: 20%; text-align: center;">Type of Money</th>
               <th style="width: 25%; text-align: center;">Amount</th>
               <th style="width: 20%; text-align: center;">Remarks</th>
             </tr>
