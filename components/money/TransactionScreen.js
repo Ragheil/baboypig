@@ -193,21 +193,24 @@ const TransactionScreen = ({ route }) => {
   }, {});
 
   const generatePDF = async () => {
-    // Helper function to format the date
-    const formatDate = (date) => {
+    // Helper function to format the date into words
+    const formatDateToWords = (date) => {
       const d = new Date(date);
       if (isNaN(d.getTime())) {
         return 'Invalid Date'; // Handle invalid dates
       }
-      return d.toLocaleDateString(); // Format the date
+  
+      // Define options for toLocaleDateString
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return d.toLocaleDateString(undefined, options); // Format the date to words
     };
   
-    // Format the date range
+    // Format the date range in words
     const formatDateRange = (start, end) => {
       if (start === end) {
-        return `As of ${formatDate(end)}`;
+        return `As of ${formatDateToWords(end)}`;
       }
-      return `${formatDate(start)} - ${formatDate(end)}`;
+      return `${formatDateToWords(start)} - ${formatDateToWords(end)}`;
     };
   
     // Define your date range (make sure startDate and endDate are properly defined)
@@ -227,11 +230,11 @@ const TransactionScreen = ({ route }) => {
         <table border="1" width="100%" style="border-collapse: collapse; table-layout: fixed;">
           <thead>
             <tr>
-              <th style="width: 15%; text-align: center;">Date</th>
+              <th style="width: 27%; text-align: center;">Date</th>
               <th style="width: 30%; text-align: center;">Description</th>
-              <th style="width: 20%; text-align: center;">Type of Money</th>
-              <th style="width: 25%; text-align: center;">Amount</th>
-              <th style="width: 20%; text-align: center;">Remarks</th>
+              <th style="width: 25%; text-align: center;">Type of Money</th>
+              <th style="width: 23%; text-align: center;">Amount</th>
+              <th style="width: 25%; text-align: center;">Remarks</th>
             </tr>
           </thead>
           <tbody>
@@ -241,7 +244,7 @@ const TransactionScreen = ({ route }) => {
     for (const date in groupedTransactions) {
       // Use the date from the first transaction in the group for the header
       const firstTransactionDate = groupedTransactions[date][0].date; // Get the date of the first transaction
-      const formattedHeaderDate = formatDate(firstTransactionDate); // Format that date for display
+      const formattedHeaderDate = formatDateToWords(firstTransactionDate); // Format that date for display
   
       // Add the date header for each group of transactions
       htmlContent += `
@@ -270,7 +273,7 @@ const TransactionScreen = ({ route }) => {
   
         htmlContent += `
           <tr>
-            <td style="padding: 8px; text-align: center;">${formatDate(transaction.date)}</td>
+            <td style="padding: 8px; text-align: center;">${formatDateToWords(transaction.date)}</td>
             <td style="padding: 8px; text-align: center;">${transaction.category || 'N/A'}</td>
             <td style="padding: 8px; text-align: center;">${transaction.type}</td>
             <td style="color: ${amountColor}; text-align: center; padding: 8px;">${formattedAmount}</td>
@@ -315,6 +318,7 @@ const TransactionScreen = ({ route }) => {
       Alert.alert('Error', 'Could not create PDF file.');
     }
   };
+  
   
   
   
