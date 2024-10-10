@@ -58,30 +58,38 @@ const TransactionScreen = ({ route }) => {
       const moneyInPath = selectedBranch === 'Main Farm'
         ? `users/${userId}/farmBranches/Main Farm/moneyInRecords`
         : `users/${userId}/farmBranches/${selectedBranch}/moneyInRecords`;
-
+  
       const moneyInRecordsRef = collection(firestore, moneyInPath);
       const inRecordsSnapshot = await getDocs(moneyInRecordsRef);
-
+  
       let incoming = [];
       inRecordsSnapshot.forEach((doc) => {
         const recordData = { id: doc.id, ...doc.data(), type: 'in' };
         incoming.push(recordData);
       });
-
+  
       const moneyOutPath = selectedBranch === 'Main Farm'
         ? `users/${userId}/farmBranches/Main Farm/moneyOutRecords`
         : `users/${userId}/farmBranches/${selectedBranch}/moneyOutRecords`;
-
+  
       const moneyOutRecordsRef = collection(firestore, moneyOutPath);
       const outRecordsSnapshot = await getDocs(moneyOutRecordsRef);
-
+  
       let outgoing = [];
       outRecordsSnapshot.forEach((doc) => {
         const recordData = { id: doc.id, ...doc.data(), type: 'out' };
         outgoing.push(recordData);
       });
-
+  
       const combinedTransactions = [...incoming, ...outgoing];
+  
+      // Sort transactions by date (newest first)
+      combinedTransactions.sort((a, b) => {
+        const dateA = a.date.toDate ? a.date.toDate() : new Date(a.date);
+        const dateB = b.date.toDate ? b.date.toDate() : new Date(b.date);
+        return dateB - dateA;
+      });
+  
       setTransactions(combinedTransactions);
       setFilteredTransactions(combinedTransactions); // Set initial filtered transactions
       calculateTotals(combinedTransactions); // Calculate initial totals
@@ -89,6 +97,7 @@ const TransactionScreen = ({ route }) => {
       console.error('Error fetching transaction records:', error);
     }
   };
+  
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -125,12 +134,24 @@ const TransactionScreen = ({ route }) => {
   const filterTransactionsByDate = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const filtered = transactions.filter((transaction) => {
-      const transactionDate = new Date(transaction.date);
-      return transactionDate >= start && transactionDate <= end;
-    });
+  
+    const filtered = transactions
+      .filter((transaction) => {
+        // Check if the transaction.date is a Firebase Timestamp, and convert it
+        const transactionDate = transaction.date.toDate ? transaction.date.toDate() : new Date(transaction.date);
+  
+        console.log("Transaction Date:", transaction.date, "Parsed Date:", transactionDate);
+  
+        return transactionDate >= start && transactionDate <= end;
+      })
+      .sort((a, b) => {
+        const dateA = a.date.toDate ? a.date.toDate() : new Date(a.date);
+        const dateB = b.date.toDate ? b.date.toDate() : new Date(b.date);
+        return dateB - dateA; // Newest first
+      });
+  
     setFilteredTransactions(filtered);
-    calculateTotals(filtered); // Calculate totals based on filtered transactions
+    calculateTotals(filtered);
   };
 
   const openDatePicker = (type) => {
